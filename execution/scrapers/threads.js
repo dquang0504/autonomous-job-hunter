@@ -306,7 +306,7 @@ async function scrapeKeyword(page, keyword, reporter) {
         let noChangeCount = 0;
         let loadedPostsForKeyword = 0;
 
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 5; i++) {
 
             // 1. Extract from DOM (Script tags + Captured Network Responses)
             const currentData = [...capturedResponses];

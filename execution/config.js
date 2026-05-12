@@ -6,9 +6,9 @@ const path = require('path');
 
 const CONFIG = {
     platforms: {
-        active: ['twitter', 'facebook', 'threads', 'indeed', 'topdev', 'itviec', 'vercel', 'cloudflare'],
-        inactive: ['linkedin', 'topcv'],
-        cookieBacked: ['twitter', 'facebook', 'threads', 'topdev', 'itviec', 'vercel']
+        active: ['twitter', 'facebook', 'threads', 'indeed', 'topdev', 'itviec', 'vercel', 'cloudflare', 'vietnamworks'],
+        inactive: ['linkedin', 'topcv', 'wellfound'],
+        cookieBacked: ['twitter', 'facebook', 'threads', 'topdev', 'itviec', 'vercel', 'vietnamworks']
     },
     keywords: [
         'golang'

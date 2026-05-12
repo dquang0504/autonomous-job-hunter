@@ -5,6 +5,7 @@ const { scrapeVercel } = require('../../scrapers/vercel');
 const { scrapeCloudflare } = require('../../scrapers/cloudflare');
 const { scrapeTopDev } = require('../../scrapers/topdev');
 const { scrapeITViec } = require('../../scrapers/itviec');
+const { scrapeVietnamWorks } = require('../../scrapers/vietnamworks');
 const ScreenshotDebugger = require('../../lib/screenshot');
 const { runFacebookTask } = require('./facebook-search');
 
@@ -123,6 +124,9 @@ function getTaskDefinitions() {
                 await scrapeCloudflare(reporter);
                 return [];
             }
+        },
+        vietnamworks: {
+            run: ({ page, reporter }) => scrapeVietnamWorks(page, reporter)
         }
     };
 }

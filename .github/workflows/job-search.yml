@@ -28,6 +28,9 @@ jobs:
           - name: others
             # Groups lighter/faster scrapers together
             arg: 'twitter,indeed,vercel,cloudflare,topdev,itviec'
+          - name: heavy-portals
+            # Portals that require more scrolling/DOM interaction
+            arg: 'vietnamworks'
 
     steps:
       - name: Checkout code
@@ -61,6 +64,7 @@ jobs:
           echo '${{ secrets.COOKIES_TOPDEV }}' > .cookies/cookies-topdev.json
           echo '${{ secrets.COOKIES_ITVIEC }}' > .cookies/cookies-itviec.json
           echo '${{ secrets.COOKIES_VERCEL }}' > .cookies/cookies-vercel.json
+          echo '${{ secrets.COOKIES_VIETNAMWORKS }}' > .cookies/cookies-vietnamworks.json
       
       # Restore caches (Read-Only)
       - name: Restore caches

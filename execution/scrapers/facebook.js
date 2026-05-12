@@ -138,7 +138,7 @@ async function scrapeFacebook(page, reporter, seenJobs = new Set(), options = {}
     const staleUrls = new Set();
     const context = page.context();
     const searchKeyword = 'golang';
-    const maxPostsPerGroup = options.maxPostsPerGroup || 15;
+    const maxPostsPerGroup = options.maxPostsPerGroup || 5;
     const maxNewJobsPerGroup = options.maxNewJobsPerGroup || 5;
     const searchSettleMinMs = options.searchSettleMinMs || 3500;
     const searchSettleMaxMs = options.searchSettleMaxMs || 6500;
