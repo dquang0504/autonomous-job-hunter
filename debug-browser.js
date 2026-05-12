@@ -64,6 +64,12 @@ async function main() {
     try {
         context = await chromium.launchPersistentContext(userDataDir, {
             channel: browserChannel,
+            ignoreDefaultArgs: [
+                '--disable-extensions',
+                '--disable-component-extensions-with-background-pages',
+                '--disable-component-update',
+                '--enable-automation'
+            ],
             headless: false,
             viewport: null,
             locale: 'vi-VN',
@@ -92,6 +98,12 @@ async function main() {
         console.warn(`⚠️  Failed to launch channel "${browserChannel}": ${error.message.split('\n')[0]}`);
         console.warn('⚠️  Falling back to bundled Chromium. Extensions from Chrome Web Store may not work there.\n');
         context = await chromium.launchPersistentContext(userDataDir, {
+            ignoreDefaultArgs: [
+                '--disable-extensions',
+                '--disable-component-extensions-with-background-pages',
+                '--disable-component-update',
+                '--enable-automation'
+            ],
             headless: false,
             viewport: null,
             locale: 'vi-VN',

@@ -16,7 +16,7 @@ function createRunPolicy(args = []) {
         itviecMs: 90_000,
         vercelMs: 60_000,
         cloudflareMs: 30_000,
-        vietnamworksMs: 180_000
+        vietnamworksMs: 60_000
     };
     const platformConfigs = {
         facebook: {
