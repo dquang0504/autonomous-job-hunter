@@ -56,7 +56,7 @@ jobs:
       - name: Build Go Scraper
         run: |
           mkdir -p skills/job-hunter/scripts/scraper-go
-          cd go-openclaw-automation
+          cd go-version
           go build -o ../skills/job-hunter/scripts/scraper-go/go-scraper cmd/scraper/main.go
 
       - name: Install dependencies
