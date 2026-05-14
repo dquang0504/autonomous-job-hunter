@@ -1,15 +1,13 @@
 {
-  "name": "openclaw-job-hunter",
+  "name": "autonomous-job-hunter",
   "version": "1.0.0",
-  "description": "Job hunting automation for Golang positions",
-  "main": "execution/job-search.js",
+  "description": "Autonomous AI job hunting agent for Golang positions",
+  "main": "execution/agent-lite.js",
   "scripts": {
-    "search": "node execution/job-search.js",
-    "search:dry": "node execution/job-search.js --dry-run",
-    "search:twitter": "node execution/job-search.js --platform=twitter",
-    "search:facebook": "node execution/job-search.js --platform=facebook",
-    "search:threads": "node execution/job-search.js --platform=threads",
-    "smoke:openclaw": "node testing/test-openclaw-runner-smoke.js"
+    "start": "node execution/agent-lite.js",
+    "search": "node execution/agent-lite.js",
+    "search:dry": "node execution/agent-lite.js --dry-run",
+    "test:ai": "node testing/test-ai-agent.js"
   },
   "keywords": [
     "job-search",

@@ -5,9 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"go-openclaw-automation/internal/classifier"
 	"go-openclaw-automation/internal/scraper"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -44,9 +47,16 @@ type aiValidationItem struct {
 func (c *grokClient) BatchValidateJobsWithAI(ctx context.Context, jobs []scraper.Job) []ValidationResult {
 	results := make([]ValidationResult, len(jobs))
 
+	// Load seed model
+	openclawRoot := os.Getenv("OPENCLAW_ROOT")
+	if openclawRoot == "" {
+		openclawRoot = filepath.Join("..", "..") // Fallback
+	}
+	seedModel, _ := classifier.BuildModel(filepath.Join(openclawRoot, "go-openclaw-automation", "internal", "classifier", "seeds.json"))
+
 	//prefill with regex fallback
 	for i, job := range jobs {
-		results[i] = regexValidate(job)
+		results[i] = regexValidate(job, seedModel, openclawRoot)
 	}
 	if len(jobs) == 0 {
 		return results
@@ -74,7 +84,7 @@ func (c *grokClient) BatchValidateJobsWithAI(ctx context.Context, jobs []scraper
 	3. Score from 1-10 (10 = Perfect Golang Job match, 1 = Spam/Irrelevant).
 	4. Extract key details: Location (CHECK DESCRIPTION CAREFULLY), Posted Date, Tech Stack.
 	5. Ignore "looking for job" posts (candidates asking for work).
-	6. CRITICAL. If the job requires more than 2 years of experience (e.g. 3+, 3-5 years, Senior), mark isValid = false.
+	6. CRITICAL: Reject the posting only if it is exclusively senior/high-experience. If the same posting includes at least one clear Fresher/Junior/Intern or <=2 YOE Golang role, keep it valid even if other roles in the same post are Senior/Lead/Manager or 3+ YOE.
 
 	Output a JSON ARRAY ONLY. No markdown, no extra text.
 	Format: [{"id": 0, "isValid": true, "score": 9, "reason": "Clear golang hiring", "location": "Remote", "postedDate": "2024-02-01", "techStack": "Go, AWS"}]
@@ -177,7 +187,7 @@ func parseValidationArray(raw string) []aiValidationItem{
 
 //regexValidate is the fallback when Groq is unavailable.
 //mirrors the regexValidate closure in Node.js ai-filter.js
-func regexValidate(job scraper.Job) ValidationResult{
+func regexValidate(job scraper.Job, seedModel *classifier.Model, openclawRoot string) ValidationResult{
 	//linkedin / twitter posts already pre-filtered by the scraper
 	src := strings.ToLower(job.Source)
 	if strings.Contains(src, "linkedin") || strings.Contains(src, "twitter") {
@@ -189,19 +199,48 @@ func regexValidate(job scraper.Job) ValidationResult{
 	}
 	text := strings.ToLower(job.Title + " " + job.Description + " " + job.Company)
 	score := 3
-	if hiringRegex.MatchString(text) && !personalRegex.MatchString(text) {
+	
+	heuristicHiring := hiringRegex.MatchString(text) && !personalRegex.MatchString(text)
+	hasGolang := golangRegex.MatchString(text)
+	
+	socialSource := strings.Contains(src, "threads") || strings.Contains(src, "facebook")
+	isHiring := heuristicHiring
+	
+	if socialSource && seedModel != nil {
+		localResult := classifier.ClassifySocialHiringPost(seedModel, openclawRoot, text)
+		localHiring := localResult.IsHiring && localResult.Confidence >= 0.72 && hiringRegex.MatchString(text)
+		isHiring = heuristicHiring || localHiring
+		if !isHiring {
+			score = 4
+		}
+	}
+
+	if isHiring {
 		score += 3
 	}
-	if golangRegex.MatchString(text) {
+	if hasGolang {
 		score += 3
 	}
+	if isHiring && hasGolang {
+		score = 8
+	}
+
 	if score > 10{
 		score = 10
 	}
+	
+	reason := "regex"
+	if socialSource && seedModel != nil && !heuristicHiring && isHiring {
+		reason = "local-social-model"
+	}
+	if !isHiring {
+		reason = "regex-non-job-post"
+	}
+	
 	return ValidationResult{
 		IsValid: score >= 6,
 		Score: score,
-		Reason: "regex",
+		Reason: reason,
 	}
 }
 

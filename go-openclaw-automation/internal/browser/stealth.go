@@ -3,46 +3,35 @@ package browser
 import (
 	"math/rand"
 	"time"
+
 	"github.com/playwright-community/playwright-go"
 )
+
 // RandomDelay waits for a random duration between min and max milliseconds
 func RandomDelay(min, max int) {
-	duration := rand.Intn(max-min+1) + min
-	time.Sleep(time.Duration(duration) * time.Millisecond)
+	if max <= min {
+		time.Sleep(time.Duration(min) * time.Millisecond)
+		return
+	}
+	delay := rand.Intn(max-min) + min
+	time.Sleep(time.Duration(delay) * time.Millisecond)
 }
-// HumanScroll simulates human-like scrolling behavior
+
+// HumanScroll performs a smooth scroll on the page to mimic human behavior
 func HumanScroll(page playwright.Page) error {
-	// Scroll down in steps
-	for i := 0; i < 5; i++ {
-		_, err := page.Evaluate("window.scrollBy(0, window.innerHeight / 2)")
+	for i := 0; i < 3; i++ {
+		_, err := page.Evaluate("window.scrollBy(0, Math.floor(Math.random() * 400) + 200)")
 		if err != nil {
 			return err
 		}
-		RandomDelay(500, 1500)
-	}
-	// Scroll back up a bit (random behavior)
-	_, err := page.Evaluate("window.scrollBy(0, -200)")
-	if err != nil {
-		return err
+		RandomDelay(500, 1200)
 	}
 	return nil
 }
-// MouseJiggle simulates random mouse movements to prevent idle detection
+
+// MouseJiggle moves the mouse slightly to simulate human activity
 func MouseJiggle(page playwright.Page) error {
-	viewportSize := page.ViewportSize()
-	if viewportSize == nil {
-		return nil
-	}
-	width := viewportSize.Width
-	height := viewportSize.Height
-	// Move mouse to random coordinates a few times
-	for i := 0; i < 3; i++ {
-		x := rand.Intn(width)
-		y := rand.Intn(height)
-		if err := page.Mouse().Move(float64(x), float64(y)); err != nil {
-			return err
-		}
-		RandomDelay(100, 300)
-	}
-	return nil
+	x := rand.Intn(100) + 100
+	y := rand.Intn(100) + 100
+	return page.Mouse().Move(float64(x), float64(y))
 }

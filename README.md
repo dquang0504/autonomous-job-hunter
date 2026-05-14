@@ -1,189 +1,81 @@
-# OpenClaw Job Hunter
+#  Autonomous Job Hunter
 
-Job hunting automation for junior-oriented Golang roles with Telegram alerts.
+**Autonomous AI job hunting agent for junior-oriented Golang positions.**
 
-The current production runtime is the Node.js pipeline in [`execution/job-search.js`](execution/job-search.js). It uses Playwright for browser automation and an OpenClaw-style orchestration layer in [`execution/openclaw`](execution/openclaw) for task ordering, state, policy, and telemetry.
+This project is an **Agentic Scraper** designed to hunt for Golang jobs (Intern/Fresher/Junior) across multiple platforms. It is optimized for running on **GitHub Actions** (free tier) and uses **Groq AI (Llama 3)** as its reasoning engine.
 
-## Current Runtime
+---
 
-Active runtime scrapers:
-- Facebook groups
-- X/Twitter
-- Threads
-- Indeed
-- TopDev
-- ITViec
-- Vercel analytics
-- Cloudflare check
+## 🚀 Key Features
 
-Currently inactive in the runtime path:
-- LinkedIn
-- TopCV
+- **Agentic Reasoning**: Uses Groq AI to perform human-like analysis on job descriptions. It doesn't just filter by keywords; it understands the context and "thinks" like a recruiter.
+- **Multi-platform Scraping**: Automates Facebook Groups, X/Twitter, Threads, Indeed, TopDev, ITViec, VietnamWorks, and more.
+- **Autonomous Filtering**: Strictly enforces your preferences:
+  - **Level**: Prioritizes Junior/Fresher; smartly rejects Senior/Lead roles.
+  - **Location**: Focuses on Ho Chi Minh City, Can Tho, or Remote.
+  - **Freshness**: Only looks for jobs posted in the last 7 days.
+- **OpenClaw-Ready Architecture**: Built using a modular **Skill** structure. If you ever upgrade to a full [OpenClaw](https://github.com/openclaw/openclaw) gateway, your scrapers are already organized and ready to be dropped in.
+- **Lightweight & Fast**: Optimized for GitHub Actions. No heavy daemons or complex setups required.
 
-Those files may still exist in the repo, but GitHub Actions and the OpenClaw runner do not call them right now.
+---
 
-## What It Does
+## 🛠️ Architecture
 
-- Searches for Golang/Go jobs oriented toward `intern`, `fresher`, `junior`, or `entry-level`
-- Applies deterministic filters for freshness, location, and level
-- Deduplicates against `logs/seen-jobs.json`
-- Marks stale posts so old jobs do not keep resurfacing
-- Optionally uses Groq AI to validate ambiguous posts
-- Sends matching jobs and error screenshots to Telegram
-- Runs on GitHub Actions every 4 hours
+The project is orchestrated by the **Agent Lite** engine:
 
-## Architecture
+1.  **Planning**: `execution/agent-lite.js` reads the goal from `skills/job-hunter/SKILL.md`.
+2.  **Execution (Skills)**: It triggers the high-performance scrapers located in `skills/job-hunter/scripts/`.
+    - **JS Scrapers**: Playwright-based workers for complex web portals.
+    - **Go Scrapers**: Native high-speed workers for API-driven platforms.
+3.  **Reasoning (The Brain)**: Raw data is sent to Groq AI. The Agent performs a multi-step reasoning loop to find the best "match" for you.
+4.  **Reporting**: A curated "Agent's Verdict" is sent to your Telegram, summarizing why the selected jobs are worth your time.
 
-Runtime flow:
-1. [`execution/job-search.js`](execution/job-search.js) bootstraps env, reporter, state, and browser/session setup
-2. [`execution/openclaw/browser.js`](execution/openclaw/browser.js) creates the browser context and loads cookies
-3. [`execution/openclaw/runner.js`](execution/openclaw/runner.js) orchestrates the run
-4. [`execution/openclaw/tasks/index.js`](execution/openclaw/tasks/index.js) wraps scrapers into a common task contract
-5. Scrapers in [`execution/scrapers`](execution/scrapers) collect raw candidates
-6. Shared logic in [`execution/lib`](execution/lib) filters, dedups, validates, and reports
-7. Run telemetry is written to `logs/openclaw-run-*.json`
+---
 
-OpenClaw here is not a separate browser engine. Playwright still drives the browser. OpenClaw is the orchestration layer on top of it.
+## 📂 Project Structure
 
-## Requirements
-
-- Node.js 22 recommended
-- npm
-- Playwright Chromium
-- Telegram bot token and chat ID
-- Valid cookies for the platforms you want to scrape
-
-## Environment Variables
-
-Use [`.env.example`](.env.example) as the template.
-
-Required:
-- `TELEGRAM_BOT_TOKEN`
-- `TELEGRAM_CHAT_ID`
-
-Optional:
-- `GROQ_API_KEY`
-- `CLOUDFLARE_API_KEY`
-- `PROXY_SERVER`
-
-If `GROQ_API_KEY` is missing, the pipeline falls back to deterministic regex validation.
-
-## Cookie Files
-
-Cookie files live in `.cookies/`.
-
-Currently used by the runtime:
-- `.cookies/cookies-twitter.json`
-- `.cookies/cookies-facebook.json`
-- `.cookies/cookies-threads.json`
-- `.cookies/cookies-topdev.json`
-- `.cookies/cookies-itviec.json`
-- `.cookies/cookies-vercel.json`
-
-Cookie files for inactive scrapers may still exist, but they are not required for the current GitHub Actions workflow.
-
-See [`docs/03-extract-cookies.md`](docs/03-extract-cookies.md) for cookie extraction guidance.
-
-## Local Setup
-
-```bash
-git clone <your-repo-url>
-cd openclaw-job-hunter
-npm install
-npx playwright install chromium
-cp .env.example .env
-mkdir -p .cookies logs .tmp/screenshots
+```text
+/
+├── skills/
+│   └── job-hunter/           # The core "Skill" package
+│       ├── SKILL.md          # Agent instructions & metadata
+│       └── scripts/          # Scraper implementations
+│           ├── scraper-js/   # Node.js + Playwright scrapers
+│           └── scraper-go/   # High-speed Go scrapers
+├── execution/
+│   └── agent-lite.js         # The main Agentic orchestrator
+├── logs/                     # Persistence & Deduplication data
+└── .github/workflows/        # Automation (Cron: Every 4 hours)
 ```
 
-Then fill in `.env` and add the cookie files you actually need.
+---
 
-## Local Commands
+## ⚙️ Setup & Usage
 
-Run the full pipeline:
+### Requirements
+- Node.js 20+
+- Playwright Chromium
+- Groq API Key (Free tier works perfectly)
+- Telegram Bot Token & Chat ID
 
+### Local Run
 ```bash
+npm install
 npm run search
 ```
 
-Dry run:
+### GitHub Actions
+The bot runs automatically every 4 hours. You can track its "Health" and "Seen Jobs" in the GitHub Actions artifacts and cache.
 
-```bash
-npm run search:dry
-```
+---
 
-Single-platform example:
+##  Inspired by OpenClaw
+This project follows the **Lobster Way** of organizing AI skills. It is a lightweight version designed for serverless environments while remaining 100% compatible with the official OpenClaw skill specification.
 
-```bash
-npm run search:twitter
-npm run search:facebook
-npm run search:threads
-npm run smoke:openclaw
-```
+---
 
-Direct entrypoint examples:
-
-```bash
-node execution/job-search.js --platform=facebook
-node execution/job-search.js --platform=threads
-node execution/job-search.js --platform=twitter,indeed,topdev,itviec
-node execution/job-search.js --dry-run --no-ai
-```
-
-## GitHub Actions
-
-The main workflow is [`job-search.yml`](.github/workflows/job-search.yml).
-
-Current cron behavior:
-- runs every 4 hours
-- splits the work into three matrix jobs:
-  - `facebook`
-  - `threads`
-  - `others` (`twitter,indeed,vercel,cloudflare,topdev,itviec`)
-- merges seen-job/cache artifacts in a follow-up job
-- updates `platform-health.json` so repeated blocked/failed platforms can be tracked across runs
-
-Secrets currently used by the workflow:
-- `TELEGRAM_BOT_TOKEN`
-- `TELEGRAM_CHAT_ID`
-- `GROQ_API_KEY`
-- `CLOUDFLARE_API_KEY`
-- `COOKIES_TWITTER`
-- `COOKIES_FACEBOOK`
-- `COOKIES_THREADS`
-- `COOKIES_TOPDEV`
-- `COOKIES_ITVIEC`
-- `COOKIES_VERCEL`
-
-## Logs And State
-
-Important runtime files:
-- `logs/seen-jobs.json`: dedup and stale memory
-- `logs/job-search-*.json`: raw collected job snapshots
-- `logs/openclaw-run-*.json`: run-level task telemetry
-- `logs/platform-health.json`: consecutive blocked/failed platform health state
-- `logs/vercel-cache.json`: Vercel analytics cache
-- `logs/cloudflare-cache.json`: Cloudflare cache
-- `.tmp/screenshots/`: error/auth/debug screenshots
-
-## Behavior Notes
-
-- Freshness window is currently 7 days
-- Mixed posts with both senior and junior roles are kept if they include at least one target junior role
-- `Hanoi only` is filtered out, but mixed location posts such as `HCM + Hanoi` are allowed
-- On auth/session failures, the scraper captures a screenshot, sends it to Telegram, and skips that platform instead of crashing the whole run
-- GitHub Actions merge step tracks repeated `blocked` or `failed` platforms over time and stores that state in `logs/platform-health.json`
-
-## Repo Layout
-
-Key directories:
-- [`execution`](execution): runtime code
-- [`execution/openclaw`](execution/openclaw): orchestration layer
-- [`execution/scrapers`](execution/scrapers): deterministic platform workers
-- [`tools`](tools): support scripts
-- [`testing`](testing): manual/debug test scripts
-- [`docs`](docs): setup notes
-- [`go-openclaw-automation`](go-openclaw-automation): separate Go subproject, not the active JS runtime
-
-## Status
-
-This repo is currently centered on the JS runtime with OpenClaw-style orchestration layered on top of Playwright. The Go subproject is still separate and is not what GitHub Actions executes today.
+## 📝 Status
+- **Agentic Loop**: ACTIVE (via Groq)
+- **Scrapers**: ACTIVE (Facebook, Twitter, Threads, ITViec, etc.)
+- **Go Integration**: READY (Modular binary support)
+- **Framework**: Lightweight Agent (No persistent gateway required)

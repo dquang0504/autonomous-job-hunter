@@ -47,10 +47,21 @@ jobs:
         with:
           python-version: '3.11'
       
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: go-openclaw-automation/go.sum
+
+      - name: Build Go Scraper
+        run: |
+          mkdir -p skills/job-hunter/scripts/scraper-go
+          cd go-openclaw-automation
+          go build -o ../skills/job-hunter/scripts/scraper-go/go-scraper cmd/scraper/main.go
+
       - name: Install dependencies
         run: |
           npm install --no-audit
-          python3 -m pip install -r execution/python/requirements.txt
           npx playwright install chromium --with-deps
       
       - name: Create directories
@@ -86,7 +97,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
-        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" node execution/job-search.js --platform=${{ matrix.arg }}
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" node execution/agent-lite.js --platform=${{ matrix.arg }}
       
       # Upload state for merging
       - name: Upload seen-jobs

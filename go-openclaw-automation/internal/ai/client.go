@@ -12,7 +12,7 @@ type Client interface {
 	// TailorResume takes a JSON string of a base resume and a job description string,
 	// and returns a tailored Resume object.
 	TailorResume(ctx context.Context, baseResumeJSON string, jobDescription string) (*models.Resume, error)
-	BatchValidationJobsWithAI
+	// BatchValidationJobsWithAI
 }
 
 // buildSystemPrompt creates the system instruction for the AI model
