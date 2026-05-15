@@ -55,9 +55,10 @@ jobs:
 
       - name: Build Go Scraper
         run: |
-          mkdir -p skills/job-hunter/scripts/scraper-go
-          cd go-version
-          go build -o ../skills/job-hunter/scripts/scraper-go/go-scraper ./cmd/scraper/main.go
+          # mkdir -p skills/job-hunter/scripts/scraper-go
+          # cd go-version
+          # go build -o ../skills/job-hunter/scripts/scraper-go/go-scraper ./cmd/scraper/main.go
+          chmod +x skills/job-hunter/scripts/scraper-go/go-scraper
 
       - name: Install dependencies
         run: |
