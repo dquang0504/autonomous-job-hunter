@@ -75,7 +75,13 @@ async function runGoScraper(platform) {
         child.on('close', (code) => {
             if (code === 0) {
                 try {
-                    const jobs = JSON.parse(output);
+                    // Find the first '[' and last ']' to extract the JSON array, 
+                    // ignoring any logs printed to stdout
+                    const jsonMatch = output.match(/\[[\s\S]*\]/);
+                    if (!jsonMatch) {
+                        throw new Error("No JSON array found in output");
+                    }
+                    const jobs = JSON.parse(jsonMatch[0]);
                     log(`✅ Go Scraper found ${jobs.length} raw jobs.`);
                     const safeTime = new Date().toISOString().replace(/:/g, '-').split('.')[0];
                     const logFile = path.join(__dirname, `./logs/job-search-results-${safeTime}.json`);
@@ -83,6 +89,8 @@ async function runGoScraper(platform) {
                     fs.writeFileSync(logFile, JSON.stringify({ jobs, source: 'go-' + platform }, null, 2));
                     resolve(jobs);
                 } catch (e) {
+                    log(`❌ Parse error: ${e.message}`);
+                    log(`Full output was: ${output}`);
                     reject(new Error("Failed to parse Go output"));
                 }
             } else reject(new Error(`Go Scraper failed`));

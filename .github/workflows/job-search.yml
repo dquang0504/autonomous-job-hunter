@@ -63,7 +63,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm install --no-audit
-          npx playwright install chromium --with-deps
+          npx playwright install --with-deps chromium
       
       - name: Create directories
         run: mkdir -p .cookies logs .tmp/screenshots
