@@ -3,7 +3,7 @@
  * Returns raw tweet data - AI validation done in main.js
  */
 
-const CONFIG = require('../config');
+const CONFIG = require('./config');
 const { randomDelay, humanScroll } = require('../lib/stealth');
 const { analyzeLocation, calculateMatchScore, hasExplicitNonPreferredLocation } = require('../lib/filters');
 const ScreenshotDebugger = require('../lib/screenshot');
