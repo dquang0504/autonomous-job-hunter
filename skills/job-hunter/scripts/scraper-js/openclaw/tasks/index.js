@@ -1,11 +1,11 @@
-const { scrapeTwitter } = require('../../scrapers/twitter');
-const { scrapeThreads } = require('../../scrapers/threads');
-const { scrapeIndeed } = require('../../scrapers/indeed');
-const { scrapeVercel } = require('../../scrapers/vercel');
-const { scrapeCloudflare } = require('../../scrapers/cloudflare');
-const { scrapeTopDev } = require('../../scrapers/topdev');
-const { scrapeITViec } = require('../../scrapers/itviec');
-const { scrapeVietnamWorks } = require('../../scrapers/vietnamworks');
+const { scrapeTwitter } = require('../../twitter');
+const { scrapeThreads } = require('../../threads');
+const { scrapeIndeed } = require('../../indeed');
+const { scrapeVercel } = require('../../vercel');
+const { scrapeCloudflare } = require('../../cloudflare');
+const { scrapeTopDev } = require('../../topdev');
+const { scrapeITViec } = require('../../itviec');
+const { scrapeVietnamWorks } = require('../../vietnamworks');
 const ScreenshotDebugger = require('../../lib/screenshot');
 const { runFacebookTask } = require('./facebook-search');
 
