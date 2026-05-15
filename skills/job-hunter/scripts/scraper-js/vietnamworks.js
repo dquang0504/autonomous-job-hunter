@@ -3,10 +3,10 @@
  * Uses DOM-based scraping for the modern React interface
  */
 
-const CONFIG = require('../config');
-const { randomDelay, humanScroll, applyStealthSettings } = require('../lib/stealth');
-const { calculateMatchScore, evaluateJob } = require('../lib/filters');
-const ScreenshotDebugger = require('../lib/screenshot');
+const CONFIG = require('./config');
+const { randomDelay, humanScroll, applyStealthSettings } = require('./lib/stealth');
+const { calculateMatchScore, evaluateJob } = require('./lib/filters');
+const ScreenshotDebugger = require('./lib/screenshot');
 
 async function scrapeVietnamWorks(page, reporter) {
     console.log('🇻🇳 Searching VietnamWorks...');

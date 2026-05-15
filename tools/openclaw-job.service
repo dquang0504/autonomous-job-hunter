@@ -6,7 +6,7 @@ After=network.target
 Type=oneshot
 User=azureuser
 WorkingDirectory=/home/azureuser/openclaw-job-hunter
-ExecStart=/usr/bin/node execution/job-search.js
+ExecStart=/usr/bin/node skills/job-hunter/scripts/scraper-js/job-search.js
 StandardOutput=append:/home/azureuser/openclaw-job-hunter/logs/job-search.log
 StandardError=append:/home/azureuser/openclaw-job-hunter/logs/job-search-error.log
 

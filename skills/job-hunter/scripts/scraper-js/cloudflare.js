@@ -6,8 +6,8 @@
 const axios = require('axios');
 const fs = require('fs');
 const crypto = require('crypto');
-const CONFIG = require('../config');
-const { getTodayVN } = require('../utils/date');
+const CONFIG = require('./config');
+const { getTodayVN } = require('./utils/date');
 
 async function scrapeCloudflare(reporter) {
   if (!CONFIG.cloudflare.apiToken) {

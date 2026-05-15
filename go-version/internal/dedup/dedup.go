@@ -27,7 +27,7 @@ func NewJobCache(cacheDir string) *JobCache {
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
 		log.Printf("⚠️ Failed to create cache directory: %v", err)
 	}
-	filepath := filepath.Join(cacheDir, "seen_jobs.json")
+	filepath := filepath.Join(cacheDir, "seen-jobs.json")
 	cache := &JobCache{
 		filePath: filepath,
 		seen:     make(map[string]int64),

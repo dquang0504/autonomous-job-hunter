@@ -2,11 +2,11 @@
   "name": "autonomous-job-hunter",
   "version": "1.0.0",
   "description": "Autonomous AI job hunting agent for Golang positions",
-  "main": "execution/agent-lite.js",
+  "main": "agent-lite.js",
   "scripts": {
-    "start": "node execution/agent-lite.js",
-    "search": "node execution/agent-lite.js",
-    "search:dry": "node execution/agent-lite.js --dry-run",
+    "start": "node agent-lite.js",
+    "search": "node agent-lite.js",
+    "search:dry": "node agent-lite.js --dry-run",
     "test:ai": "node testing/test-ai-agent.js"
   },
   "keywords": [

@@ -3,10 +3,10 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const seeds = require('../models/social-hiring-seeds');
 
-const OPENCLAW_ROOT = path.join(__dirname, '..', '..');
+const OPENCLAW_ROOT = path.join(__dirname, '..', '..', '..', '..', '..');
 const PYTHON_BIN = process.env.SOCIAL_HIRING_PYTHON || 'python3';
 const PREDICT_SCRIPT = process.env.SOCIAL_HIRING_PREDICT_SCRIPT
-    || path.join(OPENCLAW_ROOT, 'execution', 'python', 'social_hiring_predict.py');
+    || path.join(__dirname, '..', 'python', 'social_hiring_predict.py');
 
 let fastTextProbe = null;
 

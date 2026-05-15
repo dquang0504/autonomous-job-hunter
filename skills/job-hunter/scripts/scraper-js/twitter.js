@@ -4,9 +4,9 @@
  */
 
 const CONFIG = require('./config');
-const { randomDelay, humanScroll } = require('../lib/stealth');
-const { analyzeLocation, calculateMatchScore, hasExplicitNonPreferredLocation } = require('../lib/filters');
-const ScreenshotDebugger = require('../lib/screenshot');
+const { randomDelay, humanScroll } = require('./lib/stealth');
+const { analyzeLocation, calculateMatchScore, hasExplicitNonPreferredLocation } = require('./lib/filters');
+const ScreenshotDebugger = require('./lib/screenshot');
 
 /**
  * Helper: Normalize text to handle fancy fonts and accents

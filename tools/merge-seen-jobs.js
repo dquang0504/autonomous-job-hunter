@@ -64,7 +64,7 @@ function scanDir(dir) {
         const stat = fs.statSync(fullPath);
         if (stat.isDirectory()) {
             scanDir(fullPath);
-        } else if (file.endsWith('.json') && file.includes('seen-jobs')) {
+        } else if (file.endsWith('.json') && (file.includes('seen-jobs') || file.includes('seen_jobs'))) {
             processFile(fullPath);
         }
     }

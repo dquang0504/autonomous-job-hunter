@@ -3,9 +3,9 @@
  * Strategy: Combinatorial Search (Keywords x Locations) + Fast Filtering
  */
 
-const CONFIG = require('../config');
-const { randomDelay, humanScroll } = require('../lib/stealth');
-const { analyzeLocation, calculateMatchScore, shouldRejectForLevel } = require('../lib/filters');
+const CONFIG = require('./config');
+const { randomDelay, humanScroll } = require('./lib/stealth');
+const { analyzeLocation, calculateMatchScore, shouldRejectForLevel } = require('./lib/filters');
 
 /**
  * Helper: Normalize text to handle fancy fonts and accents

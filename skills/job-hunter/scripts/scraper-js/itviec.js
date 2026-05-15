@@ -2,14 +2,14 @@
  * ITViec Scraper
  */
 
-const CONFIG = require('../config');
-const { calculateMatchScore, shouldRejectForLevel } = require('../lib/filters');
-const ScreenshotDebugger = require('../lib/screenshot');
+const CONFIG = require('./config');
+const { calculateMatchScore, shouldRejectForLevel } = require('./lib/filters');
+const ScreenshotDebugger = require('./lib/screenshot');
 
 /**
  * Scrape jobs from ITViec
  * @param {import('playwright').Page} page 
- * @param {import('../lib/telegram')} reporter 
+ * @param {import('./lib/telegram')} reporter 
  */
 async function scrapeITViec(page, reporter) {
     console.log('📋 Searching ITViec...');

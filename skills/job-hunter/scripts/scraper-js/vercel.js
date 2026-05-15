@@ -2,8 +2,8 @@
  * Vercel Analytics Scraper
  */
 
-const CONFIG = require('../config');
-const ScreenshotDebugger = require('../lib/screenshot');
+const CONFIG = require('./config');
+const ScreenshotDebugger = require('./lib/screenshot');
 
 const fs = require('fs');
 

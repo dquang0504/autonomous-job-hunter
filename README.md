@@ -23,7 +23,7 @@ This project is an **Agentic Scraper** designed to hunt for Golang jobs (Intern/
 
 The project is orchestrated by the **Agent Lite** engine:
 
-1.  **Planning**: `execution/agent-lite.js` reads the goal from `skills/job-hunter/SKILL.md`.
+1.  **Planning**: `agent-lite.js` reads the goal from `skills/job-hunter/SKILL.md`.
 2.  **Execution (Skills)**: It triggers the high-performance scrapers located in `skills/job-hunter/scripts/`.
     - **JS Scrapers**: Playwright-based workers for complex web portals.
     - **Go Scrapers**: Native high-speed workers for API-driven platforms.

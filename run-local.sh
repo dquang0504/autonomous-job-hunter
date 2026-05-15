@@ -117,10 +117,10 @@ if [[ "$2" == "--ci" ]]; then
         exit 1
     fi
     echo -e "${YELLOW}⚠️  Simulating GitHub Actions environment (headless with xvfb)...${NC}"
-    xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" node execution/job-search.js --platform="$PLATFORM"
+    xvfb-run --auto-servernum --server-args="-screen 0 1280x800x24" node skills/job-hunter/scripts/scraper-js/job-search.js --platform="$PLATFORM"
 else
     # Run normally with visible browser (if headless: false in config)
-    node execution/job-search.js --platform="$PLATFORM"
+    node skills/job-hunter/scripts/scraper-js/job-search.js --platform="$PLATFORM"
 fi
 
 echo ""

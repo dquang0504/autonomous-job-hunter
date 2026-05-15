@@ -10,10 +10,10 @@ const TelegramBot = require('node-telegram-bot-api');
 const { spawn } = require('child_process');
 
 // Config & Paths
-const SKILL_PATH = path.join(__dirname, '../skills/job-hunter/SKILL.md');
-const USER_PROFILE_PATH = path.join(__dirname, '../go-openclaw-automation/base-knowledge.json');
-const JS_SCRAPER_DIR = path.join(__dirname, '../skills/job-hunter/scripts/scraper-js');
-const GO_SCRAPER_PATH = path.join(__dirname, '../skills/job-hunter/scripts/scraper-go/go-scraper');
+const SKILL_PATH = path.join(__dirname, './skills/job-hunter/SKILL.md');
+const USER_PROFILE_PATH = path.join(__dirname, './go-openclaw-automation/base-knowledge.json');
+const JS_SCRAPER_DIR = path.join(__dirname, './skills/job-hunter/scripts/scraper-js');
+const GO_SCRAPER_PATH = path.join(__dirname, './skills/job-hunter/scripts/scraper-go/go-scraper');
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
@@ -63,7 +63,8 @@ async function runGoScraper(platform) {
         log(`🚀 Starting high-speed Go scraper for: ${platform}`);
         const args = [`--platform=${platform}`];
 
-        const child = spawn(GO_SCRAPER_PATH, args, {
+        const child = spawn(path.resolve(GO_SCRAPER_PATH), args, {
+            cwd: path.dirname(GO_SCRAPER_PATH),
             env: process.env,
             stdio: ['ignore', 'pipe', 'inherit']
         });
@@ -77,7 +78,7 @@ async function runGoScraper(platform) {
                     const jobs = JSON.parse(output);
                     log(`✅ Go Scraper found ${jobs.length} raw jobs.`);
                     const safeTime = new Date().toISOString().replace(/:/g, '-').split('.')[0];
-                    const logFile = path.join(__dirname, `../logs/job-search-results-${safeTime}.json`);
+                    const logFile = path.join(__dirname, `./logs/job-search-results-${safeTime}.json`);
                     if (!fs.existsSync(path.dirname(logFile))) fs.mkdirSync(path.dirname(logFile), { recursive: true });
                     fs.writeFileSync(logFile, JSON.stringify({ jobs, source: 'go-' + platform }, null, 2));
                     resolve(jobs);
@@ -104,7 +105,7 @@ async function performAgenticReasoning() {
         log("👤 User profile loaded for personalized CV tips.");
     }
 
-    const resultsDir = path.join(__dirname, '../logs');
+    const resultsDir = path.join(__dirname, './logs');
     if (!fs.existsSync(resultsDir)) return;
 
     const resultFiles = fs.readdirSync(resultsDir)

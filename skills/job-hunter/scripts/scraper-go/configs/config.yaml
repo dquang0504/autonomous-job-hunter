@@ -37,5 +37,5 @@ facebook_groups:
   - https://www.facebook.com/groups/465885632447300
 
 #Paths
-cookies_path: "../.cookies"
-cache_path: "../logs"
+cookies_path: "../../../../.cookies"
+cache_path: "../../../../logs"

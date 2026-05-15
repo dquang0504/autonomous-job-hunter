@@ -3,16 +3,16 @@
  * Uses hidden JSON data from script tags instead of DOM selectors
  */
 
-const CONFIG = require('../config');
-const { randomDelay, humanScroll, mouseJiggle, idleBehavior } = require('../lib/stealth');
+const CONFIG = require('./config');
+const { randomDelay, humanScroll, mouseJiggle, idleBehavior } = require('./lib/stealth');
 const {
     analyzeLocation,
     hasRoleSignal,
     hasExplicitNonPreferredLocation,
     looksLikeSocialHiringPost
-} = require('../lib/filters');
-const { classifySocialHiringPost } = require('../lib/local-social-classifier');
-const ScreenshotDebugger = require('../lib/screenshot');
+} = require('./lib/filters');
+const { classifySocialHiringPost } = require('./lib/local-social-classifier');
+const ScreenshotDebugger = require('./lib/screenshot');
 
 /**
  * Helper: Normalize text to handle fancy fonts and accents

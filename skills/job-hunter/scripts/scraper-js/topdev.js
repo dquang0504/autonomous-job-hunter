@@ -3,15 +3,15 @@
  * Enhanced with anti-bot detection measures
  */
 
-const CONFIG = require('../config');
-const { calculateMatchScore, shouldRejectForLevel } = require('../lib/filters');
-const { randomDelay, mouseJiggle, smoothScroll } = require('../lib/stealth');
-const ScreenshotDebugger = require('../lib/screenshot');
+const CONFIG = require('./config');
+const { calculateMatchScore, shouldRejectForLevel } = require('./lib/filters');
+const { randomDelay, mouseJiggle, smoothScroll } = require('./lib/stealth');
+const ScreenshotDebugger = require('./lib/screenshot');
 
 /**
  * Scrape jobs from TopDev.vn
  * @param {import('playwright').Page} page 
- * @param {import('../lib/telegram')} reporter 
+ * @param {import('./lib/telegram')} reporter 
  */
 async function scrapeTopDev(page, reporter) {
     console.log('📋 Searching TopDev.vn...');

@@ -247,7 +247,7 @@ Vì `scraper` là **compiled binary**, không cần `go run`!
 
 **JavaScript (Node.js):**
 ```dockerfile
-CMD ["node", "execution/job-search.js"]
+CMD ["node", "skills/job-hunter/scripts/scraper-js/job-search.js"]
 # → Cần Node.js runtime để chạy .js file
 ```
 

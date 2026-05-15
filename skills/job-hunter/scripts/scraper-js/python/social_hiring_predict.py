@@ -18,7 +18,7 @@ def openclaw_root() -> Path:
 
 @lru_cache(maxsize=1)
 def load_model():
-    model_path = openclaw_root() / "execution" / "models" / "social-hiring.ftz"
+    model_path = Path(__file__).resolve().parent.parent / "models" / "social-hiring.ftz"
     return fasttext.load_model(str(model_path))
 
 

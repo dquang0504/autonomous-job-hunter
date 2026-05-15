@@ -3,15 +3,15 @@
  * Scrapes job listings directly from LinkedIn Jobs Search
  */
 
-const CONFIG = require('../config');
+const CONFIG = require('./config');
 const {
     randomDelay,
     humanScroll,
     mouseJiggle,
     applyStealthSettings
-} = require('../lib/stealth');
-const { analyzeLocation, calculateMatchScore, shouldRejectForLevel } = require('../lib/filters');
-const ScreenshotDebugger = require('../lib/screenshot');
+} = require('./lib/stealth');
+const { analyzeLocation, calculateMatchScore, shouldRejectForLevel } = require('./lib/filters');
+const ScreenshotDebugger = require('./lib/screenshot');
 
 /**
  * Helper: Normalize text to handle fancy fonts and accents

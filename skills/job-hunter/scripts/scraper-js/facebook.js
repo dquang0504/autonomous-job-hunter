@@ -2,11 +2,11 @@
  * Facebook Group Scraper (Authenticated Search)
  */
 
-const CONFIG = require('../config');
-const { randomDelay, humanScroll, mouseJiggle, applyStealthSettings, idleBehavior } = require('../lib/stealth');
-const { analyzeLocation, calculateMatchScore, shouldRejectForLevel } = require('../lib/filters');
-const ScreenshotDebugger = require('../lib/screenshot');
-const { extractDateCandidate, getJobFreshnessInfo } = require('../utils/date');
+const CONFIG = require('./config');
+const { randomDelay, humanScroll, mouseJiggle, applyStealthSettings, idleBehavior } = require('./lib/stealth');
+const { analyzeLocation, calculateMatchScore, shouldRejectForLevel } = require('./lib/filters');
+const ScreenshotDebugger = require('./lib/screenshot');
+const { extractDateCandidate, getJobFreshnessInfo } = require('./utils/date');
 
 /**
  * Helper: Normalize text to handle fancy fonts and accents

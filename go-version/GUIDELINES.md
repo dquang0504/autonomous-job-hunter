@@ -7,7 +7,7 @@ This document serves as the **strict set of rules** for any AI Agent working on 
 *   **Standard protocol**: Generate the solution code in the chat, explain the logic and the "why" behind it, and let the user type/implement it themselves. This is to ensure the user learns and understands the codebase.
 
 ## 2. Source of Truth
-*   The **Node.js version** (located in the parent `execution/job-search.js` and related files) is the **Source of Truth**.
+*   The **Node.js version** (located in the parent `skills/job-hunter/scripts/scraper-js/job-search.js` and related files) is the **Source of Truth**.
 *   When extending or modifying this Go version, you **MUST** reference the Node.js implementation logic, flow, and intent. The user wants this Go version to closely mirror the Node.js version's capabilities.
 
 ## 3. Active Learning & Documentation

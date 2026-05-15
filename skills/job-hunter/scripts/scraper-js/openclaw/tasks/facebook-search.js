@@ -1,4 +1,4 @@
-const { scrapeFacebook } = require('../../scrapers/facebook');
+const { scrapeFacebook } = require('../../facebook');
 
 async function runFacebookTask({ page, reporter, runState, runPolicy, scrapeFacebookFn = scrapeFacebook }) {
     const facebookPolicy = runPolicy.getPlatformConfig('facebook');

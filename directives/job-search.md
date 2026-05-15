@@ -31,8 +31,8 @@ Search for Golang/Go developer positions suitable for freshers, interns, and jun
   - 🤖 Match score (1-10)
 
 ## Approved Execution Tools
-- `execution/job-search.js` — Main scraper with Playwright
-- `execution/setup-vm.sh` — One-time VM setup
+- `skills/job-hunter/scripts/scraper-js/job-search.js` — Main scraper with Playwright
+- `tools/setup-vm.sh` — One-time VM setup
 
 ## Constraints
 1. **Inclusion criteria:**
