@@ -10,17 +10,17 @@ import (
 )
 
 type Job struct {
-	ID          string // Supabase UUID — populated after DB save
-	Title       string
-	Company     string
-	URL         string
-	Location    string
-	Salary      string
-	Techstack   string
-	Description string
-	Source      string
-	PostedDate  string
-	MatchScore  int
+	ID          string `json:"id"`
+	Title       string `json:"title"`
+	Company     string `json:"company"`
+	URL         string `json:"url"`
+	Location    string `json:"location"`
+	Salary      string `json:"salary"`
+	Techstack   string `json:"techstack"`
+	Description string `json:"description"`
+	Source      string `json:"source"`
+	PostedDate  string `json:"posted_date"`
+	MatchScore  int    `json:"match_score"`
 }
 
 // Scraper defines the interface that all platform scrapers must implement
