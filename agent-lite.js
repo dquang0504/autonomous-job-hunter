@@ -32,11 +32,41 @@ async function log(msg) {
  * Executes a scraper (either JS or Go) and returns its results.
  */
 async function executeScraper(platform = 'all') {
-    if (platform !== 'all' && GO_SUPPORTED_PLATFORMS.includes(platform)) {
-        return runGoScraper(platform);
+    let allJobs = [];
+
+    if (platform === 'all') {
+        log("🚀 Starting mixed-mode scraping (Go + JS)...");
+        
+        // 1. Run Go scrapers for supported platforms
+        for (const p of GO_SUPPORTED_PLATFORMS) {
+            try {
+                const jobs = await runGoScraper(p);
+                allJobs = allJobs.concat(jobs);
+            } catch (e) {
+                log(`⚠️ Go Scraper (${p}) failed: ${e.message}`);
+            }
+        }
+
+        // 2. Run JS for the rest
+        const allPlatforms = ['twitter', 'facebook', 'threads', 'indeed', 'topdev', 'itviec', 'vercel', 'cloudflare', 'vietnamworks'];
+        const jsPlatforms = allPlatforms.filter(p => !GO_SUPPORTED_PLATFORMS.includes(p));
+        log(`▶️ Running JS for: ${jsPlatforms.join(', ')}`);
+        
+        try {
+            await runJsScraper(jsPlatforms.join(','));
+            // JS scraper writes to files, we'll collect them in the reasoning step
+        } catch (e) {
+            log(`⚠️ JS Scraper failed: ${e.message}`);
+        }
+        
+    } else if (GO_SUPPORTED_PLATFORMS.includes(platform)) {
+        const jobs = await runGoScraper(platform);
+        allJobs = allJobs.concat(jobs);
     } else {
-        return runJsScraper(platform);
+        await runJsScraper(platform);
     }
+
+    return allJobs;
 }
 
 async function runJsScraper(platform) {
@@ -75,25 +105,29 @@ async function runGoScraper(platform) {
         child.on('close', (code) => {
             if (code === 0) {
                 try {
-                    // Find the first '[' and last ']' to extract the JSON array, 
-                    // ignoring any logs printed to stdout
                     const jsonMatch = output.match(/\[[\s\S]*\]/);
                     if (!jsonMatch) {
-                        throw new Error("No JSON array found in output");
+                        log(`ℹ️ No jobs found by Go Scraper (${platform}).`);
+                        return resolve([]);
                     }
                     const jobs = JSON.parse(jsonMatch[0]);
                     log(`✅ Go Scraper found ${jobs.length} raw jobs.`);
+                    
+                    // Save to a temporary file for the reasoning step to pick up if needed
                     const safeTime = new Date().toISOString().replace(/:/g, '-').split('.')[0];
-                    const logFile = path.join(__dirname, `./logs/job-search-results-${safeTime}.json`);
+                    const logFile = path.join(__dirname, `./logs/job-search-results-go-${platform}-${safeTime}.json`);
                     if (!fs.existsSync(path.dirname(logFile))) fs.mkdirSync(path.dirname(logFile), { recursive: true });
                     fs.writeFileSync(logFile, JSON.stringify({ jobs, source: 'go-' + platform }, null, 2));
+                    
                     resolve(jobs);
                 } catch (e) {
                     log(`❌ Parse error: ${e.message}`);
-                    log(`Full output was: ${output}`);
-                    reject(new Error("Failed to parse Go output"));
+                    resolve([]); // Don't crash the whole run
                 }
-            } else reject(new Error(`Go Scraper failed`));
+            } else {
+                log(`⚠️ Go Scraper (${platform}) exited with code ${code}`);
+                resolve([]);
+            }
         });
     });
 }
@@ -102,32 +136,49 @@ async function runGoScraper(platform) {
  * Combined AI Reasoning with User Profile Integration
  */
 async function performAgenticReasoning() {
-    log("🧠 Starting Personalized Agentic Reasoning...");
-    
     if (!GROQ_API_KEY) return;
 
+    log("🧠 Preparing for Personalized Agentic Reasoning...");
+
+    const resultsDir = path.join(__dirname, './logs');
+    if (!fs.existsSync(resultsDir)) return;
+
+    // Collect ALL jobs from result files created in the last 30 minutes
+    const now = Date.now();
+    const resultFiles = fs.readdirSync(resultsDir)
+        .filter(f => (f.startsWith('job-search-results-') || f.startsWith('job-search-202')) && f.endsWith('.json'))
+        .filter(f => {
+            const stats = fs.statSync(path.join(resultsDir, f));
+            return (now - stats.mtimeMs) < 30 * 60 * 1000; // 30 minutes
+        });
+
+    let allJobs = [];
+    for (const file of resultFiles) {
+        try {
+            const data = JSON.parse(fs.readFileSync(path.join(resultsDir, file), 'utf-8'));
+            const jobs = Array.isArray(data) ? data : (data.jobs || []);
+            allJobs = allJobs.concat(jobs);
+        } catch (e) {
+            log(`⚠️ Failed to read ${file}: ${e.message}`);
+        }
+    }
+
+    // Deduplicate by URL
+    const uniqueJobs = Array.from(new Map(allJobs.map(j => [j.url, j])).values());
+
+    if (uniqueJobs.length === 0) {
+        log("ℹ️ No new jobs to analyze with AI. Skipping reasoning.");
+        return;
+    }
+
+    log(`🧠 Starting Personalized Agentic Reasoning for ${uniqueJobs.length} jobs...`);
+    
     // Load User Profile
     let userProfile = {};
     if (fs.existsSync(USER_PROFILE_PATH)) {
         userProfile = JSON.parse(fs.readFileSync(USER_PROFILE_PATH, 'utf-8')).personal_profile;
         log("👤 User profile loaded for personalized CV tips.");
     }
-
-    const resultsDir = path.join(__dirname, './logs');
-    if (!fs.existsSync(resultsDir)) return;
-
-    const resultFiles = fs.readdirSync(resultsDir)
-        .filter(f => f.startsWith('job-search-results-') && f.endsWith('.json'))
-        .sort().reverse();
-
-    if (resultFiles.length === 0) return;
-
-    const rawData = JSON.parse(fs.readFileSync(path.join(resultsDir, resultFiles[0]), 'utf-8'));
-    const jobs = rawData.jobs || [];
-
-    if (jobs.length === 0) return;
-
-    log(`🔍 Analyzing ${jobs.length} high-potential jobs...`);
 
     const prompt = `
 You are the "Autonomous Job Hunter" Agent. 
@@ -143,7 +194,7 @@ ${JSON.stringify(userProfile, null, 2)}
 4. LOCATIONS: Prioritize Ho Chi Minh City, Can Tho, or Remote positions.
 
 ### Jobs to analyze:
-${JSON.stringify(jobs.slice(0, 15).map(j => ({ title: j.title, company: j.company, location: j.location, description: (j.description || "").slice(0, 1000) })), null, 2)}
+${JSON.stringify(uniqueJobs.slice(0, 15).map(j => ({ title: j.title, company: j.company, location: j.location, description: (j.description || "").slice(0, 1000) })), null, 2)}
 
 ### Output Format (JSON only):
 {
@@ -176,6 +227,8 @@ ${JSON.stringify(jobs.slice(0, 15).map(j => ({ title: j.title, company: j.compan
         if (matches.length > 0) {
             log(`✨ AI processed ${matches.length} matches.`);
             await sendFormattedReports(matches);
+        } else {
+            log("ℹ️ AI did not find any highly relevant matches from the collection.");
         }
     } catch (err) {
         log(`❌ Reasoning error: ${err.message}`);
@@ -190,7 +243,7 @@ async function sendFormattedReports(matches) {
     });
     summary += `\n_Đã đối chiếu với kỹ năng của bạn. Chi tiết phân tích bên dưới..._`;
     
-    await bot.sendMessage(TELEGRAM_CHAT_ID, summary, { parse_mode: 'Markdown' });
+    await bot.sendMessage(TELEGRAM_CHAT_ID, summary, { parse_mode: 'Markdown' }).catch(e => log(`⚠️ Telegram error: ${e.message}`));
 
     // Message 2: Detailed Analysis
     for (const m of matches) {
@@ -200,7 +253,7 @@ async function sendFormattedReports(matches) {
         detail += `⚠️ *Lưu ý (Red Flags):*\n${m.fair_analysis.red_flags.map(f => "- " + f).join('\n')}\n\n`;
         detail += `📄 *Mẹo chỉnh CV cho bạn:*\n_${m.personalized_cv_tips}_\n\n`;
         
-        await bot.sendMessage(TELEGRAM_CHAT_ID, detail, { parse_mode: 'Markdown' });
+        await bot.sendMessage(TELEGRAM_CHAT_ID, detail, { parse_mode: 'Markdown' }).catch(e => log(`⚠️ Telegram error: ${e.message}`));
         await new Promise(r => setTimeout(r, 500));
     }
     

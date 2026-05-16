@@ -17,6 +17,12 @@ class TelegramReporter {
     }
 
     async sendJobReport(job) {
+        // If we are in AGENT_MODE, we skip raw reports because 
+        // the Agent will send a much better, reasoned report at the end.
+        if (process.env.AGENT_MODE === 'true') {
+            return;
+        }
+
         const message = [
             `🏢 *${this.escapeMarkdown(job.company)}*`,
             `🔗 [View Job](${job.url})`,
