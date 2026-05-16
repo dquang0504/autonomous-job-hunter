@@ -9,7 +9,7 @@ import (
 	"github.com/playwright-community/playwright-go"
 )
 
-func main(){
+func main() {
 	fmt.Println("🌐 Testing Browser Manager...")
 
 	ctx := context.Background()
@@ -55,14 +55,14 @@ func main(){
 	//Check if logged in
 	title, _ := page.Title()
 	fmt.Printf("✅ Page title: %s\n", title)
-	
+
 	//take screenshot
 	_, err = page.Screenshot(playwright.PageScreenshotOptions{
 		Path: playwright.String("vercel-test.png"),
 	})
 	if err != nil {
 		log.Printf("Failed to take screenshot: %v", err)
-	}else {
+	} else {
 		fmt.Println("📸 Screenshot saved: facebook-test.png")
 	}
 	fmt.Println("✨ Test complete!")

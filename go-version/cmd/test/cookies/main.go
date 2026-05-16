@@ -10,14 +10,14 @@ func main() {
 	fmt.Println("🍪 Testing cookie loading...")
 
 	cookies, err := browser.LoadCookies("../.cookies/cookies-facebook.json")
-	if err != nil{
+	if err != nil {
 		log.Fatalf("Failed to load cookies: %v", err)
 	}
 
 	fmt.Printf("✅ Loaded %d cookies\n", len(cookies))
 
 	//Print first cookie as example
-	if len(cookies) > 0{
+	if len(cookies) > 0 {
 		c := cookies[0]
 		fmt.Printf("\nExample cookie:\n")
 		fmt.Printf("Name: %s\n", c.Name)

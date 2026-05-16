@@ -16,34 +16,33 @@ import (
 )
 
 var (
-	hiringRegex = regexp.MustCompile(`(?i)\b(is hiring|we're hiring|now hiring|#hiring|job opening|open position|hiring for|recruiting|apply now|developer needed)\b`)
+	hiringRegex   = regexp.MustCompile(`(?i)\b(is hiring|we're hiring|now hiring|#hiring|job opening|open position|hiring for|recruiting|apply now|developer needed)\b`)
 	personalRegex = regexp.MustCompile(`(?i)\b(i need|i('m| am) looking|i want|my job|just asking)\b`)
-	golangRegex = regexp.MustCompile(`(?i)\b(golang|go\s*developer|go\s*backend|go\s*engineer)\b`)
+	golangRegex   = regexp.MustCompile(`(?i)\b(golang|go\s*developer|go\s*backend|go\s*engineer)\b`)
 )
 
-//Validation struct holds the AI's verdict for a single job
+// Validation struct holds the AI's verdict for a single job
 type ValidationResult struct {
-	IsValid bool
-	Score int
-	Reason string
-	Location string
+	IsValid    bool
+	Score      int
+	Reason     string
+	Location   string
 	PostedDate string
-	TechStack string
+	TechStack  string
 }
 
-
-//aiValidationItem is the JSON structure expected by the Groq API per job
+// aiValidationItem is the JSON structure expected by the Groq API per job
 type aiValidationItem struct {
-	ID int `json:"id"`
-	IsValid bool `json:"isValid"`
-	Score int `json:"score"`
-	Reason string `json:"reason"`
-	Location string `json:"location"`
+	ID         int    `json:"id"`
+	IsValid    bool   `json:"isValid"`
+	Score      int    `json:"score"`
+	Reason     string `json:"reason"`
+	Location   string `json:"location"`
 	PostedDate string `json:"postedDate"`
-	TechStack string `json:"techStack"`
+	TechStack  string `json:"techStack"`
 }
 
-//BatchValidateJobsWithAI validates a batch of jobs using the Groq API
+// BatchValidateJobsWithAI validates a batch of jobs using the Groq API
 func (c *grokClient) BatchValidateJobsWithAI(ctx context.Context, jobs []scraper.Job) []ValidationResult {
 	results := make([]ValidationResult, len(jobs))
 
@@ -75,7 +74,7 @@ func (c *grokClient) BatchValidateJobsWithAI(ctx context.Context, jobs []scraper
 		}
 		fmt.Fprintf(&sb, "[ID:%d] SOURCE: %s | TITLE: %s | DESC: %s\n", i, job.Source, title, desc)
 	}
-	//Todo: bạn giúp mình đánh giá mức độ dư thừa của cái AI Validation này đi, kiểu nó có thực sự cần thiết không á? và cái filter regex hiện tại với AI Validator này có đang bổ trợ cho nhau không ? 
+	//Todo: bạn giúp mình đánh giá mức độ dư thừa của cái AI Validation này đi, kiểu nó có thực sự cần thiết không á? và cái filter regex hiện tại với AI Validator này có đang bổ trợ cho nhau không ?
 	systemPrompt := `You are an expert Job Hunter AI. Your task is to analyze a list of job postings and filter for REAL Golang/Go software development jobs.
 	
 	Rules:
@@ -107,7 +106,7 @@ func (c *grokClient) BatchValidateJobsWithAI(ctx context.Context, jobs []scraper
 		return results
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+ c.apiKey)
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -116,13 +115,13 @@ func (c *grokClient) BatchValidateJobsWithAI(ctx context.Context, jobs []scraper
 	defer resp.Body.Close()
 
 	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil || resp.StatusCode != http.StatusOK{
+	if err != nil || resp.StatusCode != http.StatusOK {
 		return results
 	}
-	
+
 	//parse groq response
 	var groqResp grokResponse
-	if err := json.Unmarshal(bodyBytes, &groqResp); err != nil || len(groqResp.Choices) == 0{
+	if err := json.Unmarshal(bodyBytes, &groqResp); err != nil || len(groqResp.Choices) == 0 {
 		return results
 	}
 	rawContent := cleanMarkdownJSON(groqResp.Choices[0].Message.Content)
@@ -135,23 +134,23 @@ func (c *grokClient) BatchValidateJobsWithAI(ctx context.Context, jobs []scraper
 			if score < 1 {
 				score = 1
 			}
-			if score > 10{
+			if score > 10 {
 				score = 10
 			}
 			results[item.ID] = ValidationResult{
-				IsValid: item.IsValid,
-				Score: score,
-				Reason: item.Reason,
+				IsValid:    item.IsValid,
+				Score:      score,
+				Reason:     item.Reason,
 				PostedDate: item.PostedDate,
-				TechStack: item.TechStack,
+				TechStack:  item.TechStack,
 			}
 		}
 	}
 	return results
 }
 
-//parseValidationArray handles the case where Groq may return the array wrapped in an object like {"jobs":[...]} instead of a raw [...]
-func parseValidationArray(raw string) []aiValidationItem{
+// parseValidationArray handles the case where Groq may return the array wrapped in an object like {"jobs":[...]} instead of a raw [...]
+func parseValidationArray(raw string) []aiValidationItem {
 	raw = strings.TrimSpace(raw)
 
 	//try direct array parse first
@@ -178,34 +177,34 @@ func parseValidationArray(raw string) []aiValidationItem{
 	end := strings.LastIndex(raw, "]")
 	if start != -1 && end > start {
 		var items []aiValidationItem
-		if err := json.Unmarshal([]byte(raw[start:end+1]), &items); err == nil{
+		if err := json.Unmarshal([]byte(raw[start:end+1]), &items); err == nil {
 			return items
 		}
 	}
 	return nil
 }
 
-//regexValidate is the fallback when Groq is unavailable.
-//mirrors the regexValidate closure in Node.js ai-filter.js
-func regexValidate(job scraper.Job, seedModel *classifier.Model, openclawRoot string) ValidationResult{
+// regexValidate is the fallback when Groq is unavailable.
+// mirrors the regexValidate closure in Node.js ai-filter.js
+func regexValidate(job scraper.Job, seedModel *classifier.Model, openclawRoot string) ValidationResult {
 	//linkedin / twitter posts already pre-filtered by the scraper
 	src := strings.ToLower(job.Source)
 	if strings.Contains(src, "linkedin") || strings.Contains(src, "twitter") {
 		score := job.MatchScore
-		if score == 0{
+		if score == 0 {
 			score = 8
 		}
 		return ValidationResult{IsValid: true, Score: score, Reason: "pre-filtered"}
 	}
 	text := strings.ToLower(job.Title + " " + job.Description + " " + job.Company)
 	score := 3
-	
+
 	heuristicHiring := hiringRegex.MatchString(text) && !personalRegex.MatchString(text)
 	hasGolang := golangRegex.MatchString(text)
-	
+
 	socialSource := strings.Contains(src, "threads") || strings.Contains(src, "facebook")
 	isHiring := heuristicHiring
-	
+
 	if socialSource && seedModel != nil {
 		localResult := classifier.ClassifySocialHiringPost(seedModel, openclawRoot, text)
 		localHiring := localResult.IsHiring && localResult.Confidence >= 0.72 && hiringRegex.MatchString(text)
@@ -225,10 +224,10 @@ func regexValidate(job scraper.Job, seedModel *classifier.Model, openclawRoot st
 		score = 8
 	}
 
-	if score > 10{
+	if score > 10 {
 		score = 10
 	}
-	
+
 	reason := "regex"
 	if socialSource && seedModel != nil && !heuristicHiring && isHiring {
 		reason = "local-social-model"
@@ -236,11 +235,10 @@ func regexValidate(job scraper.Job, seedModel *classifier.Model, openclawRoot st
 	if !isHiring {
 		reason = "regex-non-job-post"
 	}
-	
+
 	return ValidationResult{
 		IsValid: score >= 6,
-		Score: score,
-		Reason: reason,
+		Score:   score,
+		Reason:  reason,
 	}
 }
-

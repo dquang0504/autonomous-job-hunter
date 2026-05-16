@@ -1,8 +1,17 @@
 const { loadSeenJobs, saveSeenJobs } = require('../lib/deduplication');
+const { isDBEnabled, cleanupStaleJobs } = require('../lib/db');
 
 function createRunState() {
     const seenJobs = loadSeenJobs();
     const pendingSeenEntries = new Map();
+
+    // Run DB cleanup once at start of each run (non-blocking)
+    if (isDBEnabled()) {
+        cleanupStaleJobs().catch(() => {});
+        console.log('🗄️ DB mode enabled: using Supabase for deduplication.');
+    } else {
+        console.log('📁 DB not configured: using local seen-jobs.json for deduplication.');
+    }
 
     return {
         seenJobs,
@@ -23,6 +32,7 @@ function createRunState() {
         },
         persistSeenEntries(isDryRun = false) {
             if (isDryRun || pendingSeenEntries.size === 0) return;
+            // Always save to local JSON as a fallback/backup
             saveSeenJobs(Array.from(pendingSeenEntries.values()));
         }
     };

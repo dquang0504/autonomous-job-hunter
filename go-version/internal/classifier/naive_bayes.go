@@ -57,7 +57,7 @@ func tokenize(text string) []string {
 	normalized := normalizeText(text)
 	cleaned := tokenRegex.ReplaceAllString(normalized, " ")
 	tokens := strings.Fields(cleaned)
-	
+
 	var validTokens []string
 	for _, token := range tokens {
 		if len(token) >= 2 {
@@ -78,7 +78,7 @@ func extractFeatures(text string) []string {
 	}
 
 	normalized := normalizeText(text)
-	
+
 	if emailRegex.MatchString(text) {
 		features = append(features, "__has_email__")
 	}

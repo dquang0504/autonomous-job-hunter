@@ -69,7 +69,7 @@ func (b *Bot) SendJob(job scraper.Job, jobID string) error {
 	var refineCVBtn tgbotapi.InlineKeyboardButton
 	if jobID != "" {
 		refineCVBtn = tgbotapi.NewInlineKeyboardButtonData("🛠️ Refine CV", "refine_cv:"+jobID)
-	}else {
+	} else {
 		refineCVBtn = tgbotapi.NewInlineKeyboardButtonURL("🛠️ View Job", job.URL)
 	}
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(

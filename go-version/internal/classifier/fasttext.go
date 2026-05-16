@@ -1,10 +1,10 @@
 package classifier
 
 import (
+	"log"
 	"path/filepath"
 	"strings"
 	"sync"
-	"log"
 
 	"github.com/myagmartseren/fasttext_golang"
 )
@@ -41,7 +41,7 @@ func ClassifyWithFastTextNative(openclawRoot string, text string) *Classificatio
 	}
 
 	label := strings.ReplaceAll(strings.TrimSpace(res), "__label__", "")
-	
+
 	// The CGO wrapper currently returns only the top label without probability.
 	// We assume high confidence if the model returns it.
 	return &ClassificationResult{

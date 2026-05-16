@@ -7,7 +7,7 @@ import (
 func ShouldIncludeJob(job scraper.Job) bool {
 	text := normalizeText(job.Title + " " + job.Description)
 	//must contain golang/go
-	if !keywordRegex.MatchString(text){
+	if !keywordRegex.MatchString(text) {
 		return false
 	}
 

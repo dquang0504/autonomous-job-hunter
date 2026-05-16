@@ -186,6 +186,40 @@ func (r *Repository) IsJobSeen(ctx context.Context, jobURL string) bool {
 	return count > 0
 }
 
+// GetSeenURLs returns a set of all job external_ids (URLs) stored in the DB.
+// Used to replace the seen-jobs.json cache file for DB-backed deduplication.
+func (r *Repository) GetSeenURLs(ctx context.Context) (map[string]struct{}, error) {
+	rows, err := r.db.Query(ctx, "SELECT external_id FROM jobs")
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch seen URLs: %w", err)
+	}
+	defer rows.Close()
+
+	seen := make(map[string]struct{})
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err == nil {
+			seen[id] = struct{}{}
+		}
+	}
+	return seen, nil
+}
+
+// DeleteStaleJobs removes jobs older than the given number of days.
+// Returns the number of rows deleted. Designed to be called as an automated cleanup.
+func (r *Repository) DeleteStaleJobs(ctx context.Context, olderThanDays int) (int64, error) {
+	result, err := r.db.Exec(ctx,
+		"DELETE FROM jobs WHERE created_at < now() - ($1 || ' days')::interval",
+		olderThanDays,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("failed to delete stale jobs: %w", err)
+	}
+	deleted := result.RowsAffected()
+	fmt.Printf("🧹 Cleanup: deleted %d stale jobs (older than %d days)\n", deleted, olderThanDays)
+	return deleted, nil
+}
+
 // UpdateUserMasterResume updates master_resume_json for a specific user by Telegram ID.
 func (r *Repository) UpdateUserMasterResume(ctx context.Context, telegramID int64, resumeJSON []byte) error {
 	_, err := r.db.Exec(ctx,

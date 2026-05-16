@@ -7,31 +7,31 @@ import (
 	"github.com/playwright-community/playwright-go"
 )
 
-//Cookie struct represents a browser cookie from JSON file
-type Cookie struct{
-	Name string `json:"name"`
-	Value string `json:"value"`
-	Domain string `json:"domain"`
-	Path string `json:"path"`
-	Expires float64 `json:"expires"`
-	HTTPOnly bool `json:"httpOnly"`
-	Secure bool `json:"secure"`
-	SameSite string `json:"sameSite"`
+// Cookie struct represents a browser cookie from JSON file
+type Cookie struct {
+	Name     string  `json:"name"`
+	Value    string  `json:"value"`
+	Domain   string  `json:"domain"`
+	Path     string  `json:"path"`
+	Expires  float64 `json:"expires"`
+	HTTPOnly bool    `json:"httpOnly"`
+	Secure   bool    `json:"secure"`
+	SameSite string  `json:"sameSite"`
 }
 
-func LoadCookies(path string) ([]playwright.OptionalCookie, error){
+func LoadCookies(path string) ([]playwright.OptionalCookie, error) {
 	data, err := os.ReadFile(path)
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 
 	var cookies []Cookie
-	if err := json.Unmarshal(data, &cookies); err != nil{
+	if err := json.Unmarshal(data, &cookies); err != nil {
 		return nil, err
 	}
 
 	pwCookies := make([]playwright.OptionalCookie, len(cookies))
-	for i, c := range cookies{
+	for i, c := range cookies {
 		pwCookies[i] = c.ToPlayWright()
 	}
 	return pwCookies, nil
@@ -39,12 +39,12 @@ func LoadCookies(path string) ([]playwright.OptionalCookie, error){
 
 func (c Cookie) ToPlayWright() playwright.OptionalCookie {
 	pwCookie := playwright.OptionalCookie{
-		Name: c.Name,
-		Value: c.Value,
+		Name:   c.Name,
+		Value:  c.Value,
 		Domain: playwright.String(c.Domain),
-		Path: playwright.String(c.Path),
+		Path:   playwright.String(c.Path),
 	}
-    
+
 	if c.Expires > 0 {
 		pwCookie.Expires = playwright.Float(c.Expires)
 	}
@@ -54,11 +54,11 @@ func (c Cookie) ToPlayWright() playwright.OptionalCookie {
 
 	}
 
-	if c.Secure{
+	if c.Secure {
 		pwCookie.Secure = playwright.Bool(true)
 	}
 
-	switch c.SameSite{
+	switch c.SameSite {
 	case "Lax":
 		pwCookie.SameSite = playwright.SameSiteAttributeLax
 	case "Strict":

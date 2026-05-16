@@ -6,24 +6,24 @@ import (
 )
 
 func TestCalculateMatchScore(t *testing.T) {
-	tests := []struct{
-		name string
-		job scraper.Job
+	tests := []struct {
+		name     string
+		job      scraper.Job
 		expected int
 	}{
 		{
 			name: "Perfect match",
 			job: scraper.Job{
-				Title: "Junior Golang Developer",
+				Title:       "Junior Golang Developer",
 				Description: "Docker, Kubernetes, Remote",
-				Location:  "Can Tho",
+				Location:    "Can Tho",
 			},
 			expected: 9,
 		},
 		{
 			name: "Senior penalty",
 			job: scraper.Job{
-				Title: "Senior Golang Developer with 5 years exp",
+				Title:       "Senior Golang Developer with 5 years exp",
 				Description: "Remote",
 			},
 			expected: 0,

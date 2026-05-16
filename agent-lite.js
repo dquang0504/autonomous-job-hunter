@@ -11,7 +11,7 @@ const { spawn } = require('child_process');
 
 // Config & Paths
 const SKILL_PATH = path.join(__dirname, './skills/job-hunter/SKILL.md');
-const USER_PROFILE_PATH = path.join(__dirname, './go-openclaw-automation/base-knowledge.json');
+const USER_PROFILE_PATH = path.join(__dirname, './go-version/base-knowledge.json');
 const JS_SCRAPER_DIR = path.join(__dirname, './skills/job-hunter/scripts/scraper-js');
 const GO_SCRAPER_PATH = path.join(__dirname, './skills/job-hunter/scripts/scraper-go/go-scraper');
 const GROQ_API_KEY = process.env.GROQ_API_KEY;

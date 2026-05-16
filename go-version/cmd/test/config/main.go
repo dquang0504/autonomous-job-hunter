@@ -1,8 +1,10 @@
 package main
+
 import (
 	"fmt"
 	"go-openclaw-automation/internal/config"
 )
+
 func main() {
 	fmt.Println("🔧 Testing config loading...")
 	cfg := config.Load()
