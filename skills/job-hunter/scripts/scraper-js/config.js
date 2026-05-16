@@ -43,6 +43,8 @@ const CONFIG = {
         'https://www.facebook.com/groups/465885632447300', // IT Jobs Group
         'https://www.facebook.com/groups/1556846738967719', // (New Group)
         'https://www.facebook.com/groups/1112083256270739', // (New Group)
+        'https://www.facebook.com/groups/1649228812144970/', // Golang (Requested)
+        'https://www.facebook.com/groups/391824397049351/', // Golang (Requested)
     ],
 
     vercelUrl: 'https://vercel.com/dquang0504s-projects/my-portfolio/analytics?period=24h',

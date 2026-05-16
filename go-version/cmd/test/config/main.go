@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"go-openclaw-automation/internal/config"
+	"go-version/internal/config"
 )
 
 func main() {

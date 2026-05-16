@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"go-openclaw-automation/internal/browser"
+	"go-version/internal/browser"
 	"log"
 )
 

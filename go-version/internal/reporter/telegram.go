@@ -2,8 +2,8 @@ package reporter
 
 import (
 	"fmt"
-	"go-openclaw-automation/internal/config"
-	"go-openclaw-automation/internal/scraper"
+	"go-version/internal/config"
+	"go-version/internal/scraper"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -13,7 +13,7 @@ type TelegramReporter struct {
 	chatID int64
 }
 
-// Todo: trả lời dùm tôi xem lý do truyền param config mà phải truyền pointer là tại vì struct config có nhiều field không ? và vì do nhiều field nên nó sẽ nặng, nên khi truyền vào function thì truyền pointer để tránh copy toàn bộ struct vào function đúng không ? Tương tự với return type luôn hả ?
+// NewTelegramReporter creates a new instance of the Telegram reporter using the provided configuration.
 func NewTelegramReporter(cfg *config.Config) (*TelegramReporter, error) {
 	bot, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
 	if err != nil {

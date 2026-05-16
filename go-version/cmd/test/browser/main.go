@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"go-openclaw-automation/internal/browser"
+	"go-version/internal/browser"
 	"log"
 
 	"github.com/playwright-community/playwright-go"

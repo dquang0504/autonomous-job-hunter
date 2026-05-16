@@ -5,8 +5,8 @@ package main
 
 import (
 	"context"
-	"go-openclaw-automation/internal/config"
-	"go-openclaw-automation/internal/database"
+	"go-version/internal/config"
+	"go-version/internal/database"
 	"log"
 	"os"
 )

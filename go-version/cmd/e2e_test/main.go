@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"go-openclaw-automation/internal/database"
-	"go-openclaw-automation/internal/models"
+	"go-version/internal/database"
+	"go-version/internal/models"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"

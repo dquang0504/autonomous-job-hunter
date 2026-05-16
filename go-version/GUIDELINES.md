@@ -1,6 +1,6 @@
 # AI Agent Guidelines for Go OpenClaw Automation
 
-This document serves as the **strict set of rules** for any AI Agent working on the `go-openclaw-automation` project.
+This document serves as the **strict set of rules** for any AI Agent working on the `go-version` project.
 
 ## 1. Code Ownership & Learning Oriented
 *   **Do NOT write code for the user** unless explicitly requested (i.e., user says "write this for me" or "implement this").

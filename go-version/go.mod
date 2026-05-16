@@ -1,11 +1,10 @@
-module go-openclaw-automation
+module go-version
 
 go 1.25.1
 
 require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/jackc/pgx/v5 v5.8.0
-	github.com/myagmartseren/fasttext_golang v1.0.3
 	github.com/stretchr/testify v1.11.1
 )
 

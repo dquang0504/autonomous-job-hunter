@@ -1,7 +1,7 @@
 package filter
 
 import (
-	"go-openclaw-automation/internal/scraper"
+	"go-version/internal/scraper"
 	"regexp"
 	"strings"
 	"unicode"
@@ -24,17 +24,17 @@ func CalculateMatchScore(job scraper.Job) int {
 	//normalize text to remove accents
 	text := normalizeText(job.Title + " " + job.Description + " " + job.Company)
 
-	//golang mention (+3)
+	// Golang mention (+3)
 	if keywordRegex.MatchString(text) {
 		score += 3
 	}
 
-	//Level match +3
+	// Level match (Junior/Intern/Fresher) +3
 	if includeRegex.MatchString(text) {
 		score += 3
 	}
 
-	//location
+	// Location match
 	location := strings.ToLower(job.Location)
 	if matchesPrimaryLocation(location) {
 		score += 2
@@ -42,17 +42,17 @@ func CalculateMatchScore(job scraper.Job) int {
 		score += 1
 	}
 
-	//tech stack bonus
+	// Tech stack bonus
 	if techStackRegex.MatchString(text) {
 		score += 1
 	}
 
-	//penalty: exp >= 3 years => -5
+	// Penalty: exp >= 3 years => Score 0
 	if experienceRegex.MatchString(text) {
 		return 0
 	}
 
-	//score normalizing
+	// Score normalization (0-10)
 	if score > 10 {
 		return 10
 	}

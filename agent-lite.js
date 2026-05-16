@@ -1,27 +1,22 @@
 /**
  * Autonomous Job Hunter - Agent Lite
- * Personalized Agentic Orchestration.
+ * Orchestrates Go and JS scrapers.
  */
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const { Groq } = require('groq-sdk');
 const TelegramBot = require('node-telegram-bot-api');
 const { spawn } = require('child_process');
 
 // Config & Paths
-const SKILL_PATH = path.join(__dirname, './skills/job-hunter/SKILL.md');
-const USER_PROFILE_PATH = path.join(__dirname, './go-version/base-knowledge.json');
 const JS_SCRAPER_DIR = path.join(__dirname, './skills/job-hunter/scripts/scraper-js');
 const GO_SCRAPER_PATH = path.join(__dirname, './skills/job-hunter/scripts/scraper-go/go-scraper');
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-const groq = new Groq({ apiKey: GROQ_API_KEY });
 const bot = new TelegramBot(TELEGRAM_TOKEN);
 
-const GO_SUPPORTED_PLATFORMS = ['twitter', 'itviec', 'vietnamworks', 'topcv'];
+const GO_SUPPORTED_PLATFORMS = ['twitter', 'itviec', 'vietnamworks', 'topcv', 'facebook'];
 
 async function log(msg) {
     const timestamp = new Date().toISOString();
@@ -29,11 +24,9 @@ async function log(msg) {
 }
 
 /**
- * Executes a scraper (either JS or Go) and returns its results.
+ * Executes a scraper (either JS or Go).
  */
 async function executeScraper(platform = 'all') {
-    let allJobs = [];
-
     if (platform === 'all') {
         log("🚀 Starting mixed-mode scraping (Go + JS)...");
         
@@ -41,7 +34,9 @@ async function executeScraper(platform = 'all') {
         for (const p of GO_SUPPORTED_PLATFORMS) {
             try {
                 const jobs = await runGoScraper(p);
-                allJobs = allJobs.concat(jobs);
+                if (jobs && jobs.length > 0) {
+                    await sendSimpleReport(jobs, `Go-${p}`);
+                }
             } catch (e) {
                 log(`⚠️ Go Scraper (${p}) failed: ${e.message}`);
             }
@@ -50,23 +45,22 @@ async function executeScraper(platform = 'all') {
         // 2. Run JS for the rest
         const allPlatforms = ['twitter', 'facebook', 'threads', 'indeed', 'topdev', 'itviec', 'vercel', 'cloudflare', 'vietnamworks'];
         const jsPlatforms = allPlatforms.filter(p => !GO_SUPPORTED_PLATFORMS.includes(p));
-        log(`▶️ Running JS for: ${jsPlatforms.join(', ')}`);
+        log(`▶️ Running JS Scrapers for: ${jsPlatforms.join(', ')}`);
         
         try {
             await runJsScraper(jsPlatforms.join(','));
-            // JS scraper writes to files, we'll collect them in the reasoning step
         } catch (e) {
             log(`⚠️ JS Scraper failed: ${e.message}`);
         }
         
     } else if (GO_SUPPORTED_PLATFORMS.includes(platform)) {
         const jobs = await runGoScraper(platform);
-        allJobs = allJobs.concat(jobs);
+        if (jobs && jobs.length > 0) {
+            await sendSimpleReport(jobs, `Go-${platform}`);
+        }
     } else {
         await runJsScraper(platform);
     }
-
-    return allJobs;
 }
 
 async function runJsScraper(platform) {
@@ -111,18 +105,11 @@ async function runGoScraper(platform) {
                         return resolve([]);
                     }
                     const jobs = JSON.parse(jsonMatch[0]);
-                    log(`✅ Go Scraper found ${jobs.length} raw jobs.`);
-                    
-                    // Save to a temporary file for the reasoning step to pick up if needed
-                    const safeTime = new Date().toISOString().replace(/:/g, '-').split('.')[0];
-                    const logFile = path.join(__dirname, `./logs/job-search-results-go-${platform}-${safeTime}.json`);
-                    if (!fs.existsSync(path.dirname(logFile))) fs.mkdirSync(path.dirname(logFile), { recursive: true });
-                    fs.writeFileSync(logFile, JSON.stringify({ jobs, source: 'go-' + platform }, null, 2));
-                    
+                    log(`✅ Go Scraper found ${jobs.length} jobs.`);
                     resolve(jobs);
                 } catch (e) {
                     log(`❌ Parse error: ${e.message}`);
-                    resolve([]); // Don't crash the whole run
+                    resolve([]);
                 }
             } else {
                 log(`⚠️ Go Scraper (${platform}) exited with code ${code}`);
@@ -133,131 +120,21 @@ async function runGoScraper(platform) {
 }
 
 /**
- * Combined AI Reasoning with User Profile Integration
+ * Simple report for Go jobs (since Go scrapers don't send Telegram themselves)
  */
-async function performAgenticReasoning() {
-    if (!GROQ_API_KEY) return;
-
-    log("🧠 Preparing for Personalized Agentic Reasoning...");
-
-    const resultsDir = path.join(__dirname, './logs');
-    if (!fs.existsSync(resultsDir)) return;
-
-    // Collect ALL jobs from result files created in the last 30 minutes
-    const now = Date.now();
-    const resultFiles = fs.readdirSync(resultsDir)
-        .filter(f => (f.startsWith('job-search-results-') || f.startsWith('job-search-202')) && f.endsWith('.json'))
-        .filter(f => {
-            const stats = fs.statSync(path.join(resultsDir, f));
-            return (now - stats.mtimeMs) < 30 * 60 * 1000; // 30 minutes
-        });
-
-    let allJobs = [];
-    for (const file of resultFiles) {
-        try {
-            const data = JSON.parse(fs.readFileSync(path.join(resultsDir, file), 'utf-8'));
-            const jobs = Array.isArray(data) ? data : (data.jobs || []);
-            allJobs = allJobs.concat(jobs);
-        } catch (e) {
-            log(`⚠️ Failed to read ${file}: ${e.message}`);
-        }
-    }
-
-    // Deduplicate by URL
-    const uniqueJobs = Array.from(new Map(allJobs.map(j => [j.url, j])).values());
-
-    if (uniqueJobs.length === 0) {
-        log("ℹ️ No new jobs to analyze with AI. Skipping reasoning.");
-        return;
-    }
-
-    log(`🧠 Starting Personalized Agentic Reasoning for ${uniqueJobs.length} jobs...`);
-    
-    // Load User Profile
-    let userProfile = {};
-    if (fs.existsSync(USER_PROFILE_PATH)) {
-        userProfile = JSON.parse(fs.readFileSync(USER_PROFILE_PATH, 'utf-8')).personal_profile;
-        log("👤 User profile loaded for personalized CV tips.");
-    }
-
-    const prompt = `
-You are the "Autonomous Job Hunter" Agent. 
-Your candidate is ${userProfile.full_name || 'the user'}. 
-
-### Candidate Skills & Experience:
-${JSON.stringify(userProfile, null, 2)}
-
-### Your Task:
-1. FAIR ANALYSIS: For each job, identify objective "Green Flags" (pros) and "Red Flags" (cons/risks). 
-2. PERSONALIZED CV TIPS: Based on the candidate's actual skills above, suggest exactly what they should highlight or modify in their CV to match THIS specific job. Don't give generic advice.
-3. TARGET: Ensure the jobs are for Intern, Fresher, or Junior levels.
-4. LOCATIONS: Prioritize Ho Chi Minh City, Can Tho, or Remote positions.
-
-### Jobs to analyze:
-${JSON.stringify(uniqueJobs.slice(0, 15).map(j => ({ title: j.title, company: j.company, location: j.location, description: (j.description || "").slice(0, 1000) })), null, 2)}
-
-### Output Format (JSON only):
-{
-  "matches": [
-    {
-      "title": "...",
-      "company": "...",
-      "location": "...",
-      "fair_analysis": {
-         "green_flags": ["...", "..."],
-         "red_flags": ["...", "..."]
-      },
-      "personalized_cv_tips": "Specific advice based on comparing their skills with this JD.",
-      "url": "..." 
-    }
-  ]
-}
-`;
-
-    try {
-        const completion = await groq.chat.completions.create({
-            messages: [{ role: "user", content: prompt }],
-            model: "llama-3.3-70b-versatile",
-            response_format: { type: "json_object" }
-        });
-
-        const result = JSON.parse(completion.choices[0].message.content);
-        const matches = result.matches || result.best_matches || [];
-
-        if (matches.length > 0) {
-            log(`✨ AI processed ${matches.length} matches.`);
-            await sendFormattedReports(matches);
-        } else {
-            log("ℹ️ AI did not find any highly relevant matches from the collection.");
-        }
-    } catch (err) {
-        log(`❌ Reasoning error: ${err.message}`);
-    }
-}
-
-async function sendFormattedReports(matches) {
-    // Message 1: Summary List
-    let summary = `🛡️ *PERSONALIZED SELECTION FOR YOU*\n\n`;
-    matches.forEach((m, i) => {
-        summary += `${i+1}. *${m.title}* @ ${m.company} (${m.location})\n`;
-    });
-    summary += `\n_Đã đối chiếu với kỹ năng của bạn. Chi tiết phân tích bên dưới..._`;
-    
-    await bot.sendMessage(TELEGRAM_CHAT_ID, summary, { parse_mode: 'Markdown' }).catch(e => log(`⚠️ Telegram error: ${e.message}`));
-
-    // Message 2: Detailed Analysis
-    for (const m of matches) {
-        let detail = `🧐 *Phân tích: ${m.title}*\n🏢 ${m.company}\n\n`;
+async function sendSimpleReport(jobs, source) {
+    log(`📨 Sending ${jobs.length} jobs from ${source} to Telegram...`);
+    for (const job of jobs) {
+        const message = `🏢 *${job.company || 'Unknown'}*\n` +
+                        `📌 *${job.title}*\n` +
+                        `🔗 [View Job](${job.url})\n` +
+                        `📍 ${job.location || 'N/A'}\n` +
+                        `💰 ${job.salary || 'N/A'}\n` +
+                        `🔖 Source: ${source}`;
         
-        detail += `✅ *Green Flags:*\n${m.fair_analysis.green_flags.map(f => "- " + f).join('\n')}\n\n`;
-        detail += `⚠️ *Lưu ý (Red Flags):*\n${m.fair_analysis.red_flags.map(f => "- " + f).join('\n')}\n\n`;
-        detail += `📄 *Mẹo chỉnh CV cho bạn:*\n_${m.personalized_cv_tips}_\n\n`;
-        
-        await bot.sendMessage(TELEGRAM_CHAT_ID, detail, { parse_mode: 'Markdown' }).catch(e => log(`⚠️ Telegram error: ${e.message}`));
+        await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' }).catch(e => log(`⚠️ Telegram error: ${e.message}`));
         await new Promise(r => setTimeout(r, 500));
     }
-    
-    log("📨 Personalized reports sent to Telegram.");
 }
 
 async function main() {
@@ -266,9 +143,6 @@ async function main() {
 
     try {
         await executeScraper(platform);
-        if (!process.argv.includes('--dry-run')) {
-            await performAgenticReasoning();
-        }
         log("🏁 Session finished.");
     } catch (err) {
         log(`❌ Error: ${err.message}`);

@@ -1,6 +1,7 @@
-# Binaries
-server
-scraper
+# Binaries and source to keep local
+/server
+cmd/server/
+/scraper
 
 # Resumes and generated PDFs
 resumes/*.pdf

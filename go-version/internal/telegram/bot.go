@@ -2,7 +2,7 @@ package telegram
 
 import (
 	"fmt"
-	"go-openclaw-automation/internal/scraper"
+	"go-version/internal/scraper"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"

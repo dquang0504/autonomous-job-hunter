@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go-openclaw-automation/internal/models"
+	"go-version/internal/models"
 
 	"github.com/playwright-community/playwright-go"
 )

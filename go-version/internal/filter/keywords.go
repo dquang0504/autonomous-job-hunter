@@ -1,7 +1,7 @@
 package filter
 
 import (
-	"go-openclaw-automation/internal/scraper"
+	"go-version/internal/scraper"
 )
 
 func ShouldIncludeJob(job scraper.Job) bool {

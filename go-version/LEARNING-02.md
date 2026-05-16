@@ -709,7 +709,7 @@ Node.js scraper và Go scraper:
 openclaw-automation/
 ├── .cookies/
 │   └── cookies-facebook.json  ← Node.js cookies
-└── go-openclaw-automation/
+└── go-version/
     └── .cookies/
         └── cookies-facebook.json  ← Go cookies (duplicate!)
 
@@ -725,7 +725,7 @@ openclaw-automation/
 ├── .cookies/
 │   └── cookies-facebook.json  ← Shared!
 ├── execution/  (Node.js)
-└── go-openclaw-automation/  (Go)
+└── go-version/  (Go)
     └── (reference to ../.cookies/)
 
 Benefits:
@@ -739,7 +739,7 @@ Benefits:
 // configs/config.yaml
 cookies_path: "../.cookies"  // ← Đúng rồi!
 
-// Relative to: go-openclaw-automation/
+// Relative to: go-version/
 // Points to: openclaw-automation/.cookies/
 ```
 
@@ -756,7 +756,7 @@ node job-search.js
 # → Load từ ../.cookies/cookies-facebook.json
 
 # Go scraper dùng (CÙNG FILE!)
-cd ../go-openclaw-automation
+cd ../go-version
 go run cmd/scraper/main.go
 # → Load từ ../.cookies/cookies-facebook.json
 ```
@@ -788,7 +788,7 @@ openclaw-automation/
 │   └── scrapers/
 │       └── facebook.js    → Load from ../.cookies/
 │
-└── go-openclaw-automation/  ← Go scraper
+└── go-version/  ← Go scraper
     └── internal/
         └── scraper/
             └── facebook/

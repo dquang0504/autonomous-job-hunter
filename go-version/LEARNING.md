@@ -217,7 +217,7 @@ Vì `.env` nằm ở `/openclaw-automation/.env`, bạn có 2 options:
 
 **Option 1: Symlink**
 ```bash
-cd go-openclaw-automation
+cd go-version
 ln -s ../.env .env
 ```
 
