@@ -106,6 +106,10 @@ func (s *TwitterScraper) Scrape(ctx context.Context, browserCtx playwright.Brows
 			continue
 		}
 
+		if !filter.IsSocialHiringPost(text) {
+			continue
+		}
+
 		//extract fields
 		authorHref, _ := tweet.Locator(`[data-testid="User-Name"] a`).First().GetAttribute("href")
 		tweetHref, _ := tweet.Locator(`a[href*="/status"]`).First().GetAttribute("href")

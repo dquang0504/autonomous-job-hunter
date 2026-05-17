@@ -23,7 +23,24 @@ var (
 	remoteRegex     = regexp.MustCompile(`(?i)\b(remote|tu xa|từ xa|work from home|wfh)\b`)
 	globalRegex     = regexp.MustCompile(`(?i)\b(global|worldwide|world wide|anywhere|from anywhere|international)\b`)
 	unknownLocRegex = regexp.MustCompile(`(?i)^\s*(unknown|n/a|na|not specified|unspecified|negotiable|multiple|various|tbd)\s*$`)
+
+	// Social Hiring Signals
+	hiringSignalRegex = regexp.MustCompile(`(?i)\b(we(?:'| a)?re hiring|now hiring|is hiring|#hiring|hiring for|job opening|open position|vacancy|vacancies|recruit(?:ing|er)?|apply now|send (?:your )?(?:cv|resume)|jd\b|join our team|headcount|tuy[eê]n|tuy[eê]n d[uụ]ng|c[oơ] h[oộ]i vi[eệ]c l[aà]m|vi[eệ]c l[aà]m|urgent hire|opening for|looking for)\b`)
+	roleSignalRegex   = regexp.MustCompile(`(?i)\b(golang|go\s+developer|go\s+backend|go\s+engineer|backend engineer|backend developer|software engineer|software developer|developer|engineer|intern|fresher|junior|entry[\s-]?level|trainee)\b`)
+	nonJobRegex       = regexp.MustCompile(`(?i)\b(my pick|my take|thoughts on|thought on|roadmap|tutorial|tip[s]?|learn(?:ing)?|study|review|comparison|showcase|side project|portfolio|demo|boilerplate|template|sample code|code snippet|cheat sheet|resource[s]?|bookmark[s]?|vs\b)\b`)
+	candidateRegex    = regexp.MustCompile(`(?i)\b(open to work|looking for (?:a )?job|seeking (?:a )?(?:job|role|opportunit)|find(?:ing)? (?:a )?job|need a job|need work|my cv|my resume|hire me|available for work)\b`)
 )
+
+func IsSocialHiringPost(text string) bool {
+	text = normalizeText(text)
+	if text == "" {
+		return false
+	}
+	if candidateRegex.MatchString(text) || nonJobRegex.MatchString(text) {
+		return false
+	}
+	return hiringSignalRegex.MatchString(text) && roleSignalRegex.MatchString(text)
+}
 
 func CalculateMatchScore(job scraper.Job) int {
 	score := 0

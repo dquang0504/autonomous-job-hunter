@@ -122,21 +122,45 @@ async function runGoScraper(platform) {
 /**
  * Simple report for Go jobs (since Go scrapers don't send Telegram themselves)
  */
+function escapeMarkdown(text) {
+    if (!text) return '';
+    return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+}
+
 async function sendSimpleReport(jobs, source) {
     log(`📨 Sending ${jobs.length} jobs from ${source} to Telegram...`);
     for (const job of jobs) {
         const safeDesc = job.description ? job.description.substring(0, 150) + '...' : '';
-        const message = `🏢 *${job.company || 'Unknown'}*\n` +
-                        `📌 *${job.title}*\n` +
-                        `🔗 [View Job](${job.url})\n` +
-                        `📍 ${job.location || 'N/A'}\n` +
-                        `💰 ${job.salary || 'N/A'}\n` +
-                        (job.posted_date ? `📅 ${job.posted_date}\n` : '') +
-                        ((source.toLowerCase().includes('facebook') && safeDesc) ? `📄 ${safeDesc}\n` : '') +
-                        `🔖 Source: ${source}\n` +
-                        `🕒 Found at: ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`;
+        const lines = [
+            `🏢 *${escapeMarkdown(job.company || 'Unknown')}*`,
+            job.title ? `📌 *${escapeMarkdown(job.title)}*` : '',
+            `🔗 [View Job](${job.url})`,
+            job.salary ? `💰 ${escapeMarkdown(job.salary)}` : '',
+            `📝 ${escapeMarkdown(job.techstack || 'Golang')}`,
+            `📍 ${escapeMarkdown(job.location || 'N/A')}`,
+            job.posted_date ? `📅 ${escapeMarkdown(job.posted_date)}` : '',
+            (source.toLowerCase().includes('facebook') && safeDesc) ? `📄 ${escapeMarkdown(safeDesc)}` : '',
+            `🤖 Match Score: ${job.match_score !== undefined ? job.match_score : 'N/A'}/10`,
+            `🔖 Source: ${source}`,
+            `🕒 Found at: ${escapeMarkdown(new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }))}`
+        ];
+
+        const message = lines.filter(Boolean).join('\n');
         
-        await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' }).catch(e => log(`⚠️ Telegram error: ${e.message}`));
+        const inlineKeyboard = {
+            inline_keyboard: [
+                [
+                    { text: '🛠️ Refine CV', url: job.url },
+                    { text: '🔗 View Job', url: job.url }
+                ]
+            ]
+        };
+
+        await bot.sendMessage(TELEGRAM_CHAT_ID, message, { 
+            parse_mode: 'MarkdownV2',
+            reply_markup: inlineKeyboard
+        }).catch(e => log(`⚠️ Telegram error: ${e.message}`));
+        
         await new Promise(r => setTimeout(r, 500));
     }
 }

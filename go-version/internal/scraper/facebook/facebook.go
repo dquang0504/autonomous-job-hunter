@@ -387,7 +387,12 @@ func (s *FacebookScraper) Scrape(ctx context.Context, browserCtx playwright.Brow
 				continue
 			}
 
-			// Social Hiring Classifier (Naive Bayes)
+			// Social Hiring Classifier (Naive Bayes + Regex)
+			if !filter.IsSocialHiringPost(bodyText) {
+				log.Println("      ❌ Filtered out: Not a social hiring post")
+				detailPage.Close()
+				continue
+			}
 			if seedModel != nil {
 				res := classifier.ClassifyWithSeedModel(seedModel, bodyText)
 				// If strictly NOT hiring
