@@ -39,3 +39,15 @@ playwright-report/
 test-results/
 screenshots/
 tools/cookies-normalizer.js
+
+# Resumes and generated PDFs
+*.pdf
+scratch/
+
+# Go Platform
+go-version/server
+go-version/cmd/server/
+go-version/scraper
+go-version/resumes/*.pdf
+go-version/base-knowledge.json
+go-version/base-resume.json
