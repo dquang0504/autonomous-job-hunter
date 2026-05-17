@@ -140,8 +140,8 @@ async function sendSimpleReport(jobs, source) {
             `📍 ${escapeMarkdown(job.location || 'N/A')}`,
             job.posted_date ? `📅 ${escapeMarkdown(job.posted_date)}` : '',
             (source.toLowerCase().includes('facebook') && safeDesc) ? `📄 ${escapeMarkdown(safeDesc)}` : '',
-            `🤖 Match Score: ${job.match_score !== undefined ? job.match_score : 'N/A'}/10`,
-            `🔖 Source: ${source}`,
+            `🤖 Match Score: ${escapeMarkdown(job.match_score !== undefined ? job.match_score.toString() : 'N/A')}\\/10`,
+            `🔖 Source: ${escapeMarkdown(source)}`,
             `🕒 Found at: ${escapeMarkdown(new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }))}`
         ];
 
