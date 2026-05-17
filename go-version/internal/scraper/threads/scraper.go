@@ -185,6 +185,8 @@ func (s *ThreadsScraper) Scrape(ctx context.Context, browserCtx playwright.Brows
 		for i := 0; i < 5; i++ {
 			var keywordJobs []scraper.Job
 
+			jsonPostsStart := len(keywordJobs)
+
 			// Extract from captured responses
 			mu.Lock()
 			currentData := capturedResponses
@@ -204,7 +206,9 @@ func (s *ThreadsScraper) Scrape(ctx context.Context, browserCtx playwright.Brows
 					extractPostsFromJSON(data, &keywordJobs)
 				}
 			}
+			jsonPostsCount := len(keywordJobs) - jsonPostsStart
 
+			domPostsStart := len(keywordJobs)
 			// Extract from DOM (Fallback)
 			containers, _ := page.QuerySelectorAll(`div[data-pressable-container="true"]`)
 			for _, container := range containers {
@@ -234,6 +238,11 @@ func (s *ThreadsScraper) Scrape(ctx context.Context, browserCtx playwright.Brows
 					Description: text,
 					Source:      "Threads",
 				})
+			}
+			domPostsCount := len(keywordJobs) - domPostsStart
+
+			if jsonPostsCount > 0 || domPostsCount > 0 {
+				log.Printf("    📥 Extracted %d posts via GraphQL/JSON, %d posts via DOM", jsonPostsCount, domPostsCount)
 			}
 
 			newPosts := 0
