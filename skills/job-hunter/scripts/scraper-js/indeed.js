@@ -94,7 +94,7 @@ async function scrapeIndeed(page, reporter) {
                         }
 
                         // Check Exclude Title
-                        if (shouldRejectForLevel(normalizeText(title))) {
+                        if (shouldRejectForLevel(normalizeText(title), title)) {
                             console.log(`    ❌ Skipped (Fast Title): ${title}`);
                             continue;
                         }

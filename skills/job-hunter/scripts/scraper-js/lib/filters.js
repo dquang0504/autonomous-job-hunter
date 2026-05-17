@@ -33,11 +33,22 @@ function hasDisqualifyingLevelSignal(text) {
     return CONFIG.excludeRegex.test(text) || HIGH_EXPERIENCE_REGEX.test(text);
 }
 
-function shouldRejectForLevel(text) {
+function shouldRejectForLevel(text, title = '') {
     const normalized = normalizeFilterText(text);
     if (!normalized) return false;
 
-    return hasDisqualifyingLevelSignal(normalized) && !hasTargetLevelSignal(normalized);
+    if (hasDisqualifyingLevelSignal(normalized) && !hasTargetLevelSignal(normalized)) {
+        return true;
+    }
+
+    if (title) {
+        const normTitle = normalizeFilterText(title);
+        if (CONFIG.antiTitleRegex && CONFIG.antiTitleRegex.test(normTitle) && !CONFIG.keywordRegex.test(normTitle)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function hasHiringSignal(text) {
@@ -93,7 +104,7 @@ function evaluateJob(job) {
     const reasons = [];
 
     if (!CONFIG.keywordRegex.test(text)) reasons.push('missing_keyword');
-    if (shouldRejectForLevel(text)) reasons.push('level_reject');
+    if (shouldRejectForLevel(text, job.title)) reasons.push('level_reject');
     if (!freshnessInfo.isFresh) reasons.push('stale');
     if (locationInfo.isHanoiOnly) reasons.push('hanoi_only');
     if (hasExplicitNonPreferredLocation(job.location)) reasons.push('non_preferred_location');
@@ -158,7 +169,8 @@ function calculateMatchScore(job) {
     // PENALTY: Experience >= 3 years (Zero score)
     // Matches: "3 years", "3 nam", "3+ years", "4 năm", "5 nam"
     // Also matches "Minimum 4 years", "Tối thiểu 4 năm"
-    if (shouldRejectForLevel(text)) {
+    // Also rejects anti-patterns in title (e.g., Frontend, QA, Mobile)
+    if (shouldRejectForLevel(text, job.title)) {
         score = 0; // Immediate rejection
     }
 

@@ -24,6 +24,9 @@ var (
 	globalRegex     = regexp.MustCompile(`(?i)\b(global|worldwide|world wide|anywhere|from anywhere|international)\b`)
 	unknownLocRegex = regexp.MustCompile(`(?i)^\s*(unknown|n/a|na|not specified|unspecified|negotiable|multiple|various|tbd)\s*$`)
 
+	// Anti-pattern for Titles
+	antiTitleRegex = regexp.MustCompile(`(?i)\b(frontend|front-end|ui/ux|qa|qc|tester|mobile|ios|android|flutter|react native|ba|business analyst|data analyst|data scientist|designer|devops|sysadmin|system admin|security|network|php|wordpress|magento|shopify|sales|marketing|hr)\b`)
+
 	// Social Hiring Signals
 	hiringSignalRegex = regexp.MustCompile(`(?i)\b(we(?:'| a)?re hiring|now hiring|is hiring|#hiring|hiring for|job opening|open position|vacancy|vacancies|recruit(?:ing|er)?|apply now|send (?:your )?(?:cv|resume)|jd\b|join our team|headcount|tuy[eê]n|tuy[eê]n d[uụ]ng|c[oơ] h[oộ]i vi[eệ]c l[aà]m|vi[eệ]c l[aà]m|urgent hire|opening for|looking for)\b`)
 	roleSignalRegex   = regexp.MustCompile(`(?i)\b(golang|go\s+developer|go\s+backend|go\s+engineer|backend engineer|backend developer|software engineer|software developer|developer|engineer|intern|fresher|junior|entry[\s-]?level|trainee)\b`)

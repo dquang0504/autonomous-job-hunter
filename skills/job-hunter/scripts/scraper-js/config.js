@@ -21,6 +21,7 @@ const CONFIG = {
     jobFreshnessDays: 7,
     seenJobsRetentionDays: 120,
     keywordRegex: /\b(golang|go\s?lang|go\s?dev|go\s?engineer|backend\s?go)\b/i,
+    antiTitleRegex: /\b(frontend|front-end|ui\/ux|qa|qc|tester|mobile|ios|android|flutter|react native|ba|business analyst|data analyst|data scientist|designer|devops|sysadmin|system admin|security|network|php|wordpress|magento|shopify|sales|marketing|hr)\b/i,
     // Exclude senior-only or 3+ years. Mixed-role posts with junior/fresher roles are handled in filters.
     excludeRegex: /\b(senior|lead|manager|principal|staff|architect|(\d{2,}|[3-9])\s*(\+|plus)?\s*years?)\b/i,
     includeRegex: /\b(fresher|intern|junior|entry[\s-]?level|graduate|trainee)\b/i,

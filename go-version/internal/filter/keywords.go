@@ -11,6 +11,12 @@ func ShouldIncludeJob(job scraper.Job) bool {
 		return false
 	}
 
+	//anti-title check: reject if title has toxic keywords AND does NOT contain go/golang
+	titleText := normalizeText(job.Title)
+	if antiTitleRegex.MatchString(titleText) && !keywordRegex.MatchString(titleText) {
+		return false
+	}
+
 	//must not contain exclude keywords
 	if excludeRegex.MatchString(text) {
 		return false
