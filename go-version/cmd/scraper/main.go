@@ -120,6 +120,8 @@ func main() {
 			continue
 		}
 
+		var validJobs []scraper.Job
+
 		// --- DB PERSISTENCE ---
 		if repo != nil {
 			for i := range jobs {
@@ -157,10 +159,19 @@ func main() {
 					// Inject DB id into job for downstream Agent use
 					j.ID = saved.ID
 				}
+				validJobs = append(validJobs, *j)
+			}
+		} else {
+			// If no DB, we still filter them
+			for i := range jobs {
+				j := &jobs[i]
+				if filter.ShouldIncludeJob(*j) {
+					validJobs = append(validJobs, *j)
+				}
 			}
 		}
 
-		allJobs = append(allJobs, jobs...)
+		allJobs = append(allJobs, validJobs...)
 	}
 
 	// Output results as JSON to stdout for the Agent to consume

@@ -125,11 +125,14 @@ async function runGoScraper(platform) {
 async function sendSimpleReport(jobs, source) {
     log(`📨 Sending ${jobs.length} jobs from ${source} to Telegram...`);
     for (const job of jobs) {
+        const safeDesc = job.description ? job.description.substring(0, 150) + '...' : '';
         const message = `🏢 *${job.company || 'Unknown'}*\n` +
                         `📌 *${job.title}*\n` +
                         `🔗 [View Job](${job.url})\n` +
                         `📍 ${job.location || 'N/A'}\n` +
                         `💰 ${job.salary || 'N/A'}\n` +
+                        (job.posted_date ? `📅 ${job.posted_date}\n` : '') +
+                        ((source.toLowerCase().includes('facebook') && safeDesc) ? `📄 ${safeDesc}\n` : '') +
                         `🔖 Source: ${source}`;
         
         await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' }).catch(e => log(`⚠️ Telegram error: ${e.message}`));
