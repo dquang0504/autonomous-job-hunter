@@ -16,7 +16,7 @@ const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 const bot = new TelegramBot(TELEGRAM_TOKEN);
 
-const GO_SUPPORTED_PLATFORMS = ['twitter', 'itviec', 'vietnamworks', 'topcv', 'facebook'];
+const GO_SUPPORTED_PLATFORMS = ['twitter', 'itviec', 'vietnamworks', 'topcv', 'facebook', 'threads'];
 
 async function log(msg) {
     const timestamp = new Date().toISOString();

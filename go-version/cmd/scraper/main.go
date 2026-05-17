@@ -16,6 +16,7 @@ import (
 	"go-version/internal/scraper/itviec"
 	"go-version/internal/scraper/topcv"
 	"go-version/internal/scraper/twitter"
+	"go-version/internal/scraper/threads"
 	"go-version/internal/scraper/vietnamworks"
 	"os"
 	"path/filepath"
@@ -106,6 +107,7 @@ func main() {
 		"twitter":      twitter.NewTwitterScraper(cfg, aiClient),
 		"vietnamworks": vietnamworks.NewVietnamWorksScraper(cfg),
 		"facebook":     facebook.NewFacebookScraper(cfg, aiClient),
+		"threads":      threads.NewThreadsScraper(cfg, aiClient),
 	}
 
 	var activeScrapers []scraper.Scraper
