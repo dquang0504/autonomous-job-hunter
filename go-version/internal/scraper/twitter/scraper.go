@@ -3,6 +3,7 @@ package twitter
 import (
 	"context"
 	"fmt"
+	"go-version/internal/ai"
 	"go-version/internal/browser"
 	"go-version/internal/config"
 	"go-version/internal/filter"
@@ -19,12 +20,14 @@ import (
 var jobKeywordRegex = regexp.MustCompile(`(?i)\b(hiring|job|opening|developer|engineer|position|remote|golang|go backend)\b`)
 
 type TwitterScraper struct {
-	cfg *config.Config
+	cfg      *config.Config
+	aiClient *ai.GrokClient
 }
 
-func NewTwitterScraper(cfg *config.Config) *TwitterScraper {
+func NewTwitterScraper(cfg *config.Config, aiClient *ai.GrokClient) *TwitterScraper {
 	return &TwitterScraper{
-		cfg: cfg,
+		cfg:      cfg,
+		aiClient: aiClient,
 	}
 }
 
@@ -155,5 +158,15 @@ func (s *TwitterScraper) Scrape(ctx context.Context, browserCtx playwright.Brows
 		log.Printf("    📝 %.40s...", title)
 	}
 	log.Printf("  📊 Collected %d tweets", len(jobs))
+
+	// AI Batch Validation
+	if s.aiClient != nil && len(jobs) > 0 {
+		jobs, err = s.aiClient.ValidateSocialJobsBatch(ctx, jobs)
+		if err != nil {
+			log.Printf("      ⚠️ AI Validation Error: %v", err)
+			// Return jobs anyway as fallback
+		}
+	}
+
 	return jobs, nil
 }

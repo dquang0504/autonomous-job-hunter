@@ -11,6 +11,7 @@ import (
 	"go-version/internal/filter"
 	"go-version/internal/models"
 	"go-version/internal/scraper"
+	"go-version/internal/ai"
 	"go-version/internal/scraper/facebook"
 	"go-version/internal/scraper/itviec"
 	"go-version/internal/scraper/topcv"
@@ -90,13 +91,21 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Init AI Client
+	var aiClient *ai.GrokClient
+	groqKey := os.Getenv("GROQ_API_KEY")
+	if groqKey != "" {
+		aiClient = ai.NewGrokClient(groqKey)
+		fmt.Fprintln(os.Stderr, "🤖 AI Validator enabled (GROQ_API_KEY detected)")
+	}
+
 	// Initialize scrapers
 	availableScrapers := map[string]scraper.Scraper{
 		"topcv":        topcv.NewTopCVScraper(cfg),
 		"itviec":       itviec.NewITViecScraper(cfg),
-		"twitter":      twitter.NewTwitterScraper(cfg),
+		"twitter":      twitter.NewTwitterScraper(cfg, aiClient),
 		"vietnamworks": vietnamworks.NewVietnamWorksScraper(cfg),
-		"facebook":     facebook.NewFacebookScraper(cfg),
+		"facebook":     facebook.NewFacebookScraper(cfg, aiClient),
 	}
 
 	var activeScrapers []scraper.Scraper

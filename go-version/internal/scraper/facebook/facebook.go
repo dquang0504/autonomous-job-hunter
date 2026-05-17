@@ -3,6 +3,7 @@ package facebook
 import (
 	"context"
 	"fmt"
+	"go-version/internal/ai"
 	"go-version/internal/browser"
 	"go-version/internal/classifier"
 	"go-version/internal/config"
@@ -17,11 +18,12 @@ import (
 )
 
 type FacebookScraper struct {
-	cfg *config.Config
+	cfg      *config.Config
+	aiClient *ai.GrokClient
 }
 
-func NewFacebookScraper(cfg *config.Config) *FacebookScraper {
-	return &FacebookScraper{cfg: cfg}
+func NewFacebookScraper(cfg *config.Config, aiClient *ai.GrokClient) *FacebookScraper {
+	return &FacebookScraper{cfg: cfg, aiClient: aiClient}
 }
 
 func (s *FacebookScraper) Name() string {
@@ -422,6 +424,15 @@ func (s *FacebookScraper) Scrape(ctx context.Context, browserCtx playwright.Brow
 		if !seen[j.URL] {
 			seen[j.URL] = true
 			uniqueJobs = append(uniqueJobs, j)
+		}
+	}
+
+	// AI Batch Validation
+	if s.aiClient != nil && len(uniqueJobs) > 0 {
+		uniqueJobs, err = s.aiClient.ValidateSocialJobsBatch(ctx, uniqueJobs)
+		if err != nil {
+			log.Printf("      ⚠️ AI Validation Error: %v", err)
+			// Return jobs anyway as fallback
 		}
 	}
 
