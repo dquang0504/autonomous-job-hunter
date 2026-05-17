@@ -366,12 +366,15 @@ func (s *FacebookScraper) Scrape(ctx context.Context, browserCtx playwright.Brow
 				shortDesc = "..." + bodyText[len(bodyText)-1500:]
 			}
 
+			salary := filter.ExtractSalary(bodyText)
+
 			job := scraper.Job{
 				Title:       title,
 				Company:     "Facebook Group",
 				URL:         postUrl,
 				Description: shortDesc,
 				Location:    "Unknown",
+				Salary:      salary,
 				Source:      "Facebook",
 				Techstack:   "Golang",
 				PostedDate:  jobTime,

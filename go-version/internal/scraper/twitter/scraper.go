@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-version/internal/browser"
 	"go-version/internal/config"
+	"go-version/internal/filter"
 	"go-version/internal/scraper"
 	"log"
 	"net/url"
@@ -140,6 +141,7 @@ func (s *TwitterScraper) Scrape(ctx context.Context, browserCtx playwright.Brows
 			Company:     company,
 			URL:         jobURL,
 			Location:    "Remote/Global",
+			Salary:      filter.ExtractSalary(text),
 			Source:      "X (Twitter)",
 			Techstack:   "Golang",
 			PostedDate:  postedDate,
