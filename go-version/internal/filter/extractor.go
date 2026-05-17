@@ -6,30 +6,34 @@ import (
 )
 
 var (
-	// Matches: 20 triệu, 20-30 triệu, 20tr, 20 - 30 tr, 1000$, 1000 - 1500 USD, up to 2000$, etc.
-	vndRegex = regexp.MustCompile(`(?i)(?:lương\s*(?:net|gross)?\s*)?(?:từ\s*|up to\s*lên tới\s*|lên đến\s*|đến\s*|-|~)?\s*\d+(?:\.\d+)?\s*(?:-|~|đến|lên tới)\s*\d+(?:\.\d+)?\s*(?:triệu|tr|m|vnđ|vnd)`)
-	vndRegex2 = regexp.MustCompile(`(?i)(?:lương\s*(?:net|gross)?\s*)?(?:từ\s*|up to\s*lên tới\s*|lên đến\s*|đến\s*|-|~)?\s*\d+(?:\.\d+)?\s*(?:triệu|tr|m|vnđ|vnd)`)
-	
-	usdRegex = regexp.MustCompile(`(?i)(?:lương\s*(?:net|gross)?\s*)?(?:từ\s*|up to\s*lên tới\s*|lên đến\s*|đến\s*|-|~)?\s*\d+(?:,\d{3})?(?:\.\d+)?\s*(?:-|~|đến|to)\s*\d+(?:,\d{3})?(?:\.\d+)?\s*(?:usd|\$)`)
-	usdRegex2 = regexp.MustCompile(`(?i)(?:lương\s*(?:net|gross)?\s*)?(?:từ\s*|up to\s*|lên tới\s*|lên đến\s*|đến\s*|-|~)?\s*\$?\s*\d+(?:,\d{3})?(?:\.\d+)?\s*(?:usd|\$)?`)
+	// 1. Range-based extraction: matches explicit currency ranges anywhere
+	// Example: $1000 - $2000, 20 - 30 triệu, 50k - 60k EUR, £40,000 - 50,000
+	rangeRegex = regexp.MustCompile(`(?i)(?:[\$€£¥]\s*)?\d+(?:[,.]\d+)*(?:\s*(?:k|m|triệu|tr\b|vnd|usd|eur|sgd|gbp|aud|cad))?\s*(?:-|~|to|đến)\s*(?:[\$€£¥]\s*)?\d+(?:[,.]\d+)*\s*(?:k|m|triệu|tr\b|vnd|usd|eur|sgd|gbp|aud|cad)?`)
+
+	// 2. Context-based extraction: captures what follows "Lương", "Salary", "Mức lương"
+	// Example: "Lương: thoả thuận", "Salary up to 3000 EUR", "Mức lương hấp dẫn"
+	// Stops capturing at newline, period, comma, or semicolon to avoid bleeding into next sentences.
+	contextRegex = regexp.MustCompile(`(?i)(?:mức\s+lương|lương|salary|compensation|pay)\s*(?::|[-~]|from|up to|từ|lên tới|lên đến)?\s*([^\n\.,;]{4,40})`)
+
+	// 3. Single value fallback (has clear currency symbol)
+	// Example: $2000, 40 triệu, 5000 SGD
+	singleRegex = regexp.MustCompile(`(?i)(?:[\$€£¥]\s*\d+(?:[,.]\d+)*(?:\s*(?:k|m))?)|(?:\b\d+(?:[,.]\d+)*\s*(?:triệu|tr\b|vnd|usd|eur|sgd|gbp|aud|cad))`)
 )
 
-// ExtractSalary attempts to find a salary string from unstructured text
+// ExtractSalary attempts to find a salary string from unstructured text flexibly
 func ExtractSalary(text string) string {
-	// First try USD ranges
-	if loc := usdRegex.FindString(text); loc != "" {
+	// 1. Try explicit ranges first (most mathematically accurate)
+	if loc := rangeRegex.FindString(text); loc != "" {
 		return cleanExtracted(loc)
 	}
-	// Then try VND ranges
-	if loc := vndRegex.FindString(text); loc != "" {
-		return cleanExtracted(loc)
+
+	// 2. Try context-based (great for text like "Thoả thuận" or "Up to X EUR")
+	if match := contextRegex.FindStringSubmatch(text); len(match) > 1 {
+		return cleanExtracted(match[1])
 	}
-	// Then try single USD values if they have clear context like "lương" or "$"
-	if loc := regexp.MustCompile(`(?i)(?:lương\s*(?:net|gross)?\s*).{0,20}\$?\d+(?:,\d{3})?(?:\.\d+)?\s*(?:usd|\$)?`).FindString(text); loc != "" {
-		return cleanExtracted(loc)
-	}
-	// Then try single VND values if they have clear context
-	if loc := regexp.MustCompile(`(?i)(?:lương\s*(?:net|gross)?\s*).{0,20}\d+(?:\.\d+)?\s*(?:triệu|tr\b)`).FindString(text); loc != "" {
+
+	// 3. Try single clear currency value anywhere
+	if loc := singleRegex.FindString(text); loc != "" {
 		return cleanExtracted(loc)
 	}
 
@@ -38,7 +42,8 @@ func ExtractSalary(text string) string {
 
 func cleanExtracted(text string) string {
 	text = strings.ReplaceAll(text, "\n", " ")
-	text = strings.Join(strings.Fields(text), " ") // remove extra spaces
+	text = strings.Join(strings.Fields(text), " ") // clean extra whitespaces
+	text = strings.TrimSpace(text)
 	if len(text) > 40 {
 		return text[:40] + "..."
 	}
