@@ -1,5 +1,4 @@
 const { scrapeTwitter } = require('../../twitter');
-const { scrapeThreads } = require('../../threads');
 const { scrapeIndeed } = require('../../indeed');
 const { scrapeVercel } = require('../../vercel');
 const { scrapeCloudflare } = require('../../cloudflare');
@@ -103,9 +102,6 @@ function getTaskDefinitions() {
         },
         facebook: {
             run: ({ page, reporter, runState, runPolicy }) => runFacebookTask({ page, reporter, runState, runPolicy })
-        },
-        threads: {
-            run: ({ page, reporter }) => scrapeThreads(page, reporter)
         },
         indeed: {
             run: ({ page, reporter }) => scrapeIndeed(page, reporter)
