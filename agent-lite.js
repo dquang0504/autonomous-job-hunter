@@ -133,7 +133,8 @@ async function sendSimpleReport(jobs, source) {
                         `💰 ${job.salary || 'N/A'}\n` +
                         (job.posted_date ? `📅 ${job.posted_date}\n` : '') +
                         ((source.toLowerCase().includes('facebook') && safeDesc) ? `📄 ${safeDesc}\n` : '') +
-                        `🔖 Source: ${source}`;
+                        `🔖 Source: ${source}\n` +
+                        `🕒 Found at: ${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}`;
         
         await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' }).catch(e => log(`⚠️ Telegram error: ${e.message}`));
         await new Promise(r => setTimeout(r, 500));
