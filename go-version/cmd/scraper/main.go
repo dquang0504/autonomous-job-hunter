@@ -145,6 +145,10 @@ func main() {
 					continue
 				}
 
+				if j.MatchScore == 0 {
+					j.MatchScore = filter.CalculateMatchScore(*j)
+				}
+
 				// Skip if already seen (DB-backed dedup)
 				if repo.IsJobSeen(ctx, j.URL) {
 					fmt.Fprintf(os.Stderr, "⏩ Already in DB, skip: %s\n", j.URL)
@@ -177,6 +181,9 @@ func main() {
 			for i := range jobs {
 				j := &jobs[i]
 				if filter.ShouldIncludeJob(*j) {
+					if j.MatchScore == 0 {
+						j.MatchScore = filter.CalculateMatchScore(*j)
+					}
 					validJobs = append(validJobs, *j)
 				}
 			}

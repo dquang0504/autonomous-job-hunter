@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	keywordRegex    = regexp.MustCompile(`(?i)\b(golang|go\s+developer|go\s+backend|\bGo\b|blockchain)\b`)
+	keywordRegex    = regexp.MustCompile(`(?i)\b(golang|go\s?lang|go\s?dev|go\s?engineer|backend\s?go)\b`)
 	excludeRegex    = regexp.MustCompile(`(?i)\b(senior|lead|manager|principal|staff|architect|(\d{2,}|[3-9])\s*(\+|plus)?\s*years?|2\+\s*years?)\b`)
 	includeRegex    = regexp.MustCompile(`(?i)\b(fresher|intern|junior|entry[\s-]?level|graduate|trainee)\b`)
 	techStackRegex  = regexp.MustCompile(`(?i)\b(docker|kubernetes|aws|gcp|microservices|rest\s*api|grpc|backend|back-end|fullstack|full-stack)\b`)

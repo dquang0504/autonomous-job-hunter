@@ -138,7 +138,6 @@ async function scrapeIndeed(page, reporter) {
                             continue;
                         }
 
-                        // VALID
                         const job = {
                             title: title.trim(),
                             company: company.trim(),
@@ -147,10 +146,11 @@ async function scrapeIndeed(page, reporter) {
                             location: locationRaw.trim(),
                             source: 'Indeed',
                             techStack: 'Golang',
-                            description: description.slice(0, 200) + '...'
+                            description: description // keep full temporarily
                         };
 
                         job.matchScore = calculateMatchScore(job);
+                        job.description = description.slice(0, 200) + '...';
 
                         // Add to map
                         jobsMap.set(uniqueKey, job);

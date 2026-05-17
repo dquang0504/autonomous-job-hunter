@@ -4,8 +4,8 @@
  */
 require('dotenv').config();
 const { chromium } = require('playwright');
-const CONFIG = require('../execution/config');
-const { scrapeIndeed } = require('../execution/scrapers/indeed');
+const CONFIG = require('../skills/job-hunter/scripts/scraper-js/config');
+const { scrapeIndeed } = require('../skills/job-hunter/scripts/scraper-js/indeed');
 
 // Mock Reporter
 const reporter = {
