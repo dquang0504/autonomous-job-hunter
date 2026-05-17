@@ -21,6 +21,17 @@ func ShouldIncludeJob(job scraper.Job) bool {
 		return false
 	}
 
+	//must not be explicitly in a non-preferred location
+	if HasExplicitNonPreferredLocation(job.Location) {
+		return false
+	}
+
+	//must not be Hanoi ONLY
+	fullText := text + " " + normalizeText(job.Location)
+	if IsHanoiOnly(fullText) {
+		return false
+	}
+
 	//must be recent (<= 60 days)
 	if !IsRecentJob(job.PostedDate) {
 		return false
