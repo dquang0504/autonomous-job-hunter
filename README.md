@@ -44,17 +44,17 @@ The following diagram illustrates the decoupled execution pipeline of `agent-lit
 graph TD
     A["Planning (agent-lite.js)"] -->|Loads configuration| B["configs/config.yaml"]
     A -->|Spawns JS workers| C["scrapers/js/ (Playwright)"]
-    A -->|Spawns Go Scraper Binary| D["scrapers/go/bin/go-scraper"]
-    
-    subgraph Go Execution Pipeline
-        D -->|Concurrent workers| E["Facebook, Twitter, Threads Scrapers"]
+    A -->|Spawns Go Scraper Binary| D
+
+    subgraph Go Execution Pipeline ["Go Execution Pipeline"]
+        D["scrapers/go/bin/go-scraper"] -->|Concurrent workers| E["Facebook, Twitter, Threads Scrapers"]
         E -->|Out-of-Process prediction stream| F["Go-Python Classifier Bridge"]
         F -->|Evaluates .ftz model| G["social_hiring_predict.py (FastText)"]
         F -->|Fallback model| H["internal/classifier/naive_bayes.go (Naive Bayes)"]
     end
 
     C -->|Extracts jobs| I["Raw Jobs Payload"]
-    D -->|Extracts jobs| I
+    E -->|Extracts jobs| I
     I -->|Enforces heuristics| J["internal/filter/ (Keywords, Level, Location, Date)"]
     J -->|Unified storage lookup| K["internal/dedup/ (Supabase / JSON Local Cache)"]
     K -->|Groq AI match analysis| L["Groq Reasoning Engine"]
