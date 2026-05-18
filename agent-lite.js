@@ -9,8 +9,8 @@ const TelegramBot = require('node-telegram-bot-api');
 const { spawn } = require('child_process');
 
 // Config & Paths
-const JS_SCRAPER_DIR = path.join(__dirname, './skills/job-hunter/scripts/scraper-js');
-const GO_SCRAPER_PATH = path.join(__dirname, './skills/job-hunter/scripts/scraper-go/go-scraper');
+const JS_SCRAPER_DIR = path.join(__dirname, './scrapers/js');
+const GO_SCRAPER_PATH = path.join(__dirname, './scrapers/go/bin/go-scraper');
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
@@ -88,7 +88,7 @@ async function runGoScraper(platform) {
         const args = [`--platform=${platform}`];
 
         const child = spawn(path.resolve(GO_SCRAPER_PATH), args, {
-            cwd: path.dirname(GO_SCRAPER_PATH),
+            cwd: path.resolve(__dirname, './scrapers/go'),
             env: process.env,
             stdio: ['ignore', 'pipe', 'inherit']
         });

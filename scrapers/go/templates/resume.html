@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{.PersonalInformation.FullName}} - Resume</title>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+      --ink: #111827;
+      --muted: #4b5563;
+      --rule: #e5e7eb;
+      --link: #111827;
+    }
+
+    /* Print */
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      background: #fff;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: var(--ink);
+      font-size: 10.5pt;
+      line-height: 1.45;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* A4 canvas */
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 16mm 18mm 18mm 18mm;
+      box-sizing: border-box;
+    }
+
+    /* Header (TopDev-style: compact, no avatar, no big banner) */
+    .header {
+      margin-bottom: 10px;
+    }
+
+    .name {
+      font-size: 18pt;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      margin: 0;
+    }
+
+    .headline {
+      margin: 2px 0 0 0;
+      font-size: 10.5pt;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .meta {
+      margin-top: 6px;
+      font-size: 9.5pt;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: baseline;
+    }
+
+    .meta a {
+      color: var(--link);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+
+    .meta a:hover {
+      border-bottom-color: var(--rule);
+    }
+
+    .sep {
+      color: #9ca3af;
+    }
+
+    /* Sections */
+    .section {
+      margin-top: 12px;
+    }
+
+    .section-title {
+      margin: 0 0 6px 0;
+      font-size: 10pt;
+      font-weight: 700;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      color: var(--ink);
+    }
+
+    .rule {
+      height: 1px;
+      background: var(--rule);
+      border: 0;
+      margin: 0 0 8px 0;
+    }
+
+    .paragraph {
+      margin: 0;
+      text-align: justify;
+    }
+
+    /* Skills (single-line rows like the PDFs) */
+    .skills {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .skill-line {
+      margin: 0 0 3px 0;
+    }
+
+    .label {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .value {
+      color: var(--ink);
+    }
+
+    /* Items */
+    .item {
+      margin: 0 0 10px 0;
+    }
+
+    .item-title {
+      margin: 0;
+      font-weight: 700;
+      font-size: 10.5pt;
+    }
+
+    .item-subline {
+      margin: 2px 0 0 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 9.5pt;
+      color: var(--muted);
+    }
+
+    .item-subline .left {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .item-subline .right {
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    /* Bullets */
+    ul.bullets {
+      margin: 6px 0 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    ul.bullets li {
+      margin: 0 0 4px 0;
+      padding-left: 14px;
+      position: relative;
+      text-align: justify;
+    }
+
+    ul.bullets li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .tech {
+      margin-top: 5px;
+      font-size: 9.5pt;
+      color: var(--muted);
+    }
+
+    .tech .label {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    /* Project link line */
+    .project-link {
+      font-size: 9.5pt;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .project-link a {
+      color: var(--link);
+      text-decoration: none;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    /* Keep layout stable for PDF renderers */
+    * {
+      box-sizing: border-box;
+    }
+
+    .avoid-break {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <!-- HEADER -->
+    <div class="header">
+      <h1 class="name">
+        {{.PersonalInformation.FullName}}{{if .PersonalInformation.JobTitle}} ({{.PersonalInformation.JobTitle}}){{end}}
+      </h1>
+
+      <div class="meta">
+        {{if .PersonalInformation.Location}}<span>{{.PersonalInformation.Location}}</span>{{end}}
+
+        {{if .PersonalInformation.Email}}
+        <span class="sep">•</span>
+        <span><a href="mailto:{{.PersonalInformation.Email}}">{{.PersonalInformation.Email}}</a></span>
+        {{end}}
+
+        {{if .PersonalInformation.Phone}}
+        <span class="sep">•</span>
+        <span>{{.PersonalInformation.Phone}}</span>
+        {{end}}
+
+        {{if .PersonalInformation.Links.LinkedIn}}
+        <span class="sep">•</span>
+        <span><a href="https://{{.PersonalInformation.Links.LinkedIn}}">{{.PersonalInformation.Links.LinkedIn}}</a></span>
+        {{end}}
+
+        {{if .PersonalInformation.Links.Portfolio}}
+        <span class="sep">•</span>
+        <span><a href="https://{{.PersonalInformation.Links.Portfolio}}">{{.PersonalInformation.Links.Portfolio}}</a></span>
+        {{end}}
+      </div>
+    </div>
+
+    <!-- SUMMARY -->
+    {{if .Summary}}
+    <section class="section">
+      <div class="section-title">Summary</div>
+      <hr class="rule" />
+      <p class="paragraph">{{.Summary}}</p>
+    </section>
+    {{end}}
+
+    <!-- SKILLS -->
+    <section class="section">
+      <div class="section-title">Skills</div>
+      <hr class="rule" />
+      <ul class="skills">
+        {{if .Skills.Languages}}
+        <li class="skill-line"><span class="label">Languages:</span> <span class="value">{{join .Skills.Languages ", "}}</span></li>
+        {{end}}
+
+        {{if .Skills.Frontend}}
+        <li class="skill-line"><span class="label">Frontend:</span> <span class="value">{{join .Skills.Frontend ", "}}</span></li>
+        {{end}}
+
+        {{if .Skills.Backend}}
+        <li class="skill-line"><span class="label">Backend:</span> <span class="value">{{join .Skills.Backend ", "}}</span></li>
+        {{end}}
+
+        {{if .Skills.Databases}}
+        <li class="skill-line"><span class="label">Databases:</span> <span class="value">{{join .Skills.Databases ", "}}</span></li>
+        {{end}}
+
+        {{if .Skills.DevOpsInfra}}
+        <li class="skill-line"><span class="label">DevOps &amp; Infra:</span> <span class="value">{{join .Skills.DevOpsInfra ", "}}</span></li>
+        {{end}}
+
+        {{if .Skills.Security}}
+        <li class="skill-line"><span class="label">Security:</span> <span class="value">{{join .Skills.Security ", "}}</span></li>
+        {{end}}
+      </ul>
+    </section>
+
+    <!-- EXPERIENCE -->
+    {{if .Experience}}
+    <section class="section">
+      <div class="section-title">Experience</div>
+      <hr class="rule" />
+
+      {{range .Experience}}
+      <div class="item avoid-break">
+        <p class="item-title">{{.Role}}</p>
+        <div class="item-subline">
+          <div class="left">{{.Company}}{{if .Location}}, {{.Location}}{{end}}</div>
+          <div class="right">{{.Duration}}</div>
+        </div>
+
+        {{if .Responsibilities}}
+        <ul class="bullets">
+          {{range .Responsibilities}}
+          <li>{{.}}</li>
+          {{end}}
+        </ul>
+        {{end}}
+
+        {{if .TechStack}}
+        <div class="tech"><span class="label">Tech Stack:</span> {{join .TechStack ", "}}</div>
+        {{end}}
+      </div>
+      {{end}}
+    </section>
+    {{end}}
+
+    <!-- PROJECTS -->
+    {{if .Projects}}
+    <section class="section">
+      <div class="section-title">Project</div>
+      <hr class="rule" />
+
+      {{range .Projects}}
+      <div class="item avoid-break">
+        <p class="item-title">{{.Name}}</p>
+
+        {{if .URL}}
+        <div class="project-link">
+          <a href="https://{{.URL}}">{{.URL}}</a>
+          {{if .Duration}}<span class="sep">•</span> <span>{{.Duration}}</span>{{end}}
+        </div>
+        {{else}}
+        {{if .Duration}}
+        <div class="project-link">{{.Duration}}</div>
+        {{end}}
+        {{end}}
+
+        {{if .Description}}
+        <p class="paragraph" style="margin-top: 4px;">{{.Description}}</p>
+        {{end}}
+
+        {{if .Details}}
+        <ul class="bullets">
+          {{range .Details}}
+          <li>{{.}}</li>
+          {{end}}
+        </ul>
+        {{end}}
+
+        {{if .TechStack}}
+        <div class="tech"><span class="label">Tech Stack:</span> {{join .TechStack ", "}}</div>
+        {{end}}
+      </div>
+      {{end}}
+    </section>
+    {{end}}
+
+    <!-- EDUCATION -->
+    {{if .Education.Degree}}
+    <section class="section">
+      <div class="section-title">Education</div>
+      <hr class="rule" />
+
+      <div class="item avoid-break">
+        <p class="item-title">{{.Education.Degree}}</p>
+        <div class="item-subline">
+          <div class="left">{{.Education.Institution}}{{if .Education.Location}}, {{.Education.Location}}{{end}}</div>
+          <div class="right">{{.Education.GraduationYear}}</div>
+        </div>
+        {{if .Education.GPA}}
+        <div class="tech" style="margin-top: 3px;"><span class="label">GPA:</span> {{.Education.GPA}}</div>
+        {{end}}
+      </div>
+    </section>
+    {{end}}
+
+    <!-- CERTIFICATIONS -->
+    {{if .Certifications}}
+    <section class="section">
+      <div class="section-title">Certifications</div>
+      <hr class="rule" />
+
+      {{range .Certifications}}
+      <div class="item avoid-break" style="margin-bottom: 6px;">
+        <p class="item-title">{{.Name}}</p>
+        <div class="item-subline">
+          <div class="left">{{.Issuer}}</div>
+          <div class="right">{{.Year}}</div>
+        </div>
+        {{if .Details}}
+        <div class="tech" style="margin-top: 3px;">{{.Details}}</div>
+        {{end}}
+      </div>
+      {{end}}
+    </section>
+    {{end}}
+
+  </div>
+</body>
+
+</html>
