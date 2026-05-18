@@ -24,7 +24,8 @@ def load_model():
 
 def classify_text(text: str) -> dict:
     model = load_model()
-    labels, scores = model.predict(text or "", k=2)
+    clean_text = (text or "").replace("\n", " ").replace("\r", " ")
+    labels, scores = model.predict(clean_text, k=2)
     normalized = [
         (label.replace("__label__", ""), float(score))
         for label, score in zip(labels, scores)

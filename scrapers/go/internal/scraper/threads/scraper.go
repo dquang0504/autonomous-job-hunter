@@ -198,47 +198,51 @@ func (s *ThreadsScraper) Scrape(ctx context.Context, browserCtx playwright.Brows
 				extractPostsFromJSON(d, &keywordJobs)
 			}
 
-			// Extract from scripts
-			scripts, _ := page.QuerySelectorAll(`script[type="application/json"]`)
-			for _, script := range scripts {
-				content, _ := script.TextContent()
-				var data interface{}
-				if err := json.Unmarshal([]byte(content), &data); err == nil {
-					extractPostsFromJSON(data, &keywordJobs)
+			// Extract from scripts (Only on the first scroll iteration since they are static)
+			if i == 0 {
+				scripts, _ := page.QuerySelectorAll(`script[type="application/json"]`)
+				for _, script := range scripts {
+					content, _ := script.TextContent()
+					var data interface{}
+					if err := json.Unmarshal([]byte(content), &data); err == nil {
+						extractPostsFromJSON(data, &keywordJobs)
+					}
 				}
 			}
 			jsonPostsCount := len(keywordJobs) - jsonPostsStart
 
 			domPostsStart := len(keywordJobs)
-			// Extract from DOM (Fallback)
-			containers, _ := page.QuerySelectorAll(`div[data-pressable-container="true"]`)
-			for _, container := range containers {
-				text, _ := container.InnerText()
-				if len(text) < 5 {
-					continue
-				}
+			// Extract from DOM (Fallback if JSON failed)
+			if jsonPostsCount == 0 {
+				containers, _ := page.QuerySelectorAll(`div[data-pressable-container="true"]`)
+				for _, container := range containers {
+					text, _ := container.InnerText()
+					if len(text) < 5 {
+						continue
+					}
 
-				linkEl, _ := container.QuerySelector(`a[href*="/post/"]`)
-				if linkEl == nil {
-					continue
-				}
-				postUrl, _ := linkEl.GetAttribute("href")
-				
-				userEl, _ := container.QuerySelector(`a[href^="/@"]:not([href*="/post/"])`)
-				username := "unknown"
-				if userEl != nil {
-					href, _ := userEl.GetAttribute("href")
-					username = strings.ReplaceAll(strings.ReplaceAll(href, "/@", ""), "/", "")
-				}
+					linkEl, _ := container.QuerySelector(`a[href*="/post/"]`)
+					if linkEl == nil {
+						continue
+					}
+					postUrl, _ := linkEl.GetAttribute("href")
+					
+					userEl, _ := container.QuerySelector(`a[href^="/@"]:not([href*="/post/"])`)
+					username := "unknown"
+					if userEl != nil {
+						href, _ := userEl.GetAttribute("href")
+						username = strings.ReplaceAll(strings.ReplaceAll(href, "/@", ""), "/", "")
+					}
 
-				keywordJobs = append(keywordJobs, scraper.Job{
-					ID:          postUrl,
-					Title:       "Golang Opportunity",
-					Company:     "@" + username,
-					URL:         "https://www.threads.com" + postUrl,
-					Description: text,
-					Source:      "Threads",
-				})
+					keywordJobs = append(keywordJobs, scraper.Job{
+						ID:          postUrl,
+						Title:       "Golang Opportunity",
+						Company:     "@" + username,
+						URL:         "https://www.threads.com" + postUrl,
+						Description: text,
+						Source:      "Threads",
+					})
+				}
 			}
 			domPostsCount := len(keywordJobs) - domPostsStart
 
