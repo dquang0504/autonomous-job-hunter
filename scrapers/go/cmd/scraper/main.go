@@ -14,6 +14,7 @@ import (
 	"go-version/internal/models"
 	"go-version/internal/scraper"
 	"go-version/internal/scraper/facebook"
+	"go-version/internal/scraper/indeed"
 	"go-version/internal/scraper/itviec"
 	"go-version/internal/scraper/threads"
 	"go-version/internal/scraper/topcv"
@@ -29,7 +30,7 @@ import (
 const staleJobDays = 60 // Auto-cleanup jobs older than this many days
 
 func main() {
-	platformFlag := flag.String("platform", "all", "Platform to scrape (all, topcv, itviec, twitter, facebook)")
+	platformFlag := flag.String("platform", "all", "Platform to scrape (all, indeed, topcv, itviec, twitter, facebook)")
 	flag.Parse()
 
 	// Load config
@@ -108,6 +109,7 @@ func main() {
 	availableScrapers := map[string]scraper.Scraper{
 		"topcv":        topcv.NewTopCVScraper(cfg),
 		"itviec":       itviec.NewITViecScraper(cfg),
+		"indeed":       indeed.NewIndeedScraper(cfg),
 		"twitter":      twitter.NewTwitterScraper(cfg, aiClient),
 		"vietnamworks": vietnamworks.NewVietnamWorksScraper(cfg),
 		"facebook":     facebook.NewFacebookScraper(cfg, aiClient),

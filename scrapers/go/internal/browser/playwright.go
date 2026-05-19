@@ -59,7 +59,7 @@ func NewPlaywright(ctx context.Context) (*PlaywrightManager, error) {
 func (pm *PlaywrightManager) NewContext(cookies []playwright.OptionalCookie) (playwright.BrowserContext, error) {
 	//create context with stealth settings
 	ctx, err := pm.browser.NewContext(playwright.BrowserNewContextOptions{
-		UserAgent: playwright.String("Mozilla/5.0(Windows NT 10.0; Win64; x64 AppleWebKit/537.36) (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"),
+		UserAgent: playwright.String("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"),
 		Viewport: &playwright.Size{
 			Width:  1280,
 			Height: 800,
