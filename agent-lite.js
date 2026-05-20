@@ -202,7 +202,6 @@ async function main() {
     const platform = args.find(a => a.startsWith('--platform='))?.split('=')[1] || 'all';
 
     try {
-        await registerNewSubscribers();
         await executeScraper(platform);
         log("🏁 Session finished.");
     } catch (err) {
