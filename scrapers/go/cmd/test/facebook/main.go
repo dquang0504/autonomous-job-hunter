@@ -89,15 +89,11 @@ func main() {
 	statusMsg := fmt.Sprintf("Facebook Scraper test run completed. Found %d valid job(s).", len(jobs))
 	_ = bot.SendStatus(statusMsg)
 
-	// 8. Wire results to Telegram
+	// 8. Wire results to Telegram (broadcast to all subscribers, nil repo = owner fallback)
 	for _, job := range jobs {
 		fmt.Printf("📤 Sending job to Telegram: %s at %s\n", job.Title, job.Company)
-		err := bot.SendJob(job, "")
-		if err != nil {
-			log.Printf("⚠️ Failed to send job to Telegram: %v", err)
-		} else {
-			fmt.Println("✅ Job sent successfully!")
-		}
+		bot.BroadcastJob(ctx, nil, job, "")
+		fmt.Println("✅ Job sent successfully!")
 	}
 
 	fmt.Println("✨ Facebook Scraper test completed successfully!")

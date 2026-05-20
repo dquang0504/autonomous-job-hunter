@@ -15,9 +15,11 @@ import (
 )
 
 type Config struct {
-	TelegramToken  string   `yaml:"telegram_token" env:"TELEGRAM_BOT_TOKEN"`
-	TelegramChatID int64    `yaml:"telegram_chat_id" env:"TELEGRAM_CHAT_ID"`
-	Keywords       []string `yaml:"keywords"`
+	TelegramToken        string   `yaml:"telegram_token" env:"TELEGRAM_BOT_TOKEN"`
+	TelegramChatID       int64    `yaml:"telegram_chat_id" env:"TELEGRAM_CHAT_ID"`
+	Keywords             []string `yaml:"keywords"`
+	SocialSearchKeywords []string `yaml:"social_search_keywords"`
+
 	//Search criteria
 	Locations       []string `yaml:"locations"`
 	FacebookGroups  []string `yaml:"facebook_groups"`

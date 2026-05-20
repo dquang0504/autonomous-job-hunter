@@ -18,7 +18,7 @@ import (
 	"github.com/playwright-community/playwright-go"
 )
 
-var jobKeywordRegex = regexp.MustCompile(`(?i)\b(hiring|job|opening|developer|engineer|position|remote|golang|go backend)\b`)
+var jobKeywordRegex = regexp.MustCompile(`(?i)\b(hiring|job|opening|developer|engineer|position|remote|golang|go backend|go developer|backend role)\b`)
 
 type TwitterScraper struct {
 	cfg      *config.Config
@@ -36,6 +36,34 @@ func (s *TwitterScraper) Name() string {
 	return "X (Twitter)"
 }
 
+func extractLocation(text string) string {
+	if filter.IsHanoiOnly(text) {
+		return "Hanoi"
+	}
+	if filter.HasPreferredLocation(text) {
+		// Just a heuristic matching JS roughly
+		return "Ho Chi Minh"
+	}
+
+	// Tagged match
+	taggedMatch := regexp.MustCompile(`[📍📌]\s*([^\n|•]{2,80})`).FindStringSubmatch(text)
+	if len(taggedMatch) > 1 {
+		return strings.TrimSpace(taggedMatch[1])
+	}
+
+	lines := strings.Split(text, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if regexp.MustCompile(`(?i)^(location|dia diem|địa điểm|based in|onsite in|hybrid in|work location)\b`).MatchString(line) {
+			normalized := regexp.MustCompile(`(?i)^(location|dia diem|địa điểm|based in|onsite in|hybrid in|work location)\b`).ReplaceAllString(line, "")
+			normalized = strings.Trim(normalized, " :,-")
+			return strings.TrimSpace(normalized)
+		}
+	}
+
+	return "Unknown"
+}
+
 func (s *TwitterScraper) Scrape(ctx context.Context, browserCtx playwright.BrowserContext) ([]scraper.Job, error) {
 	var jobs []scraper.Job
 	log.Println("🐦 Searching X (Twitter)...")
@@ -47,136 +75,134 @@ func (s *TwitterScraper) Scrape(ctx context.Context, browserCtx playwright.Brows
 	}
 	defer page.Close()
 
-	//Build search query — Twitter uses up to 3 keywords from config (same as Node.js source)
 	keywords := s.cfg.Keywords
-	if len(keywords) > 3 {
-		keywords = keywords[:3]
-	}
-	// Wrap each keyword in quotes so Twitter searches exact phrases
-	// e.g. ["golang"] → ["\"golang\""] → joined: `"golang"`
-	quotedKeywords := make([]string, len(keywords))
-	for i, k := range keywords {
-		quotedKeywords[i] = fmt.Sprintf(`"%s"`, k) // closing quote was missing
-	}
-	keywordPart := strings.Join(quotedKeywords, " OR ")
-	searchQuery := fmt.Sprintf(`(%s) (job OR hiring) (fresher OR junior OR intern) -senior`, keywordPart)
-	log.Printf("  🔍 Query: %.60s...", searchQuery)
-
-	//navigate to latest tweets
-	searchURL := fmt.Sprintf("https://x.com/search?q=%s&f=live", url.QueryEscape(searchQuery))
-	if _, err := page.Goto(searchURL, playwright.PageGotoOptions{
-		WaitUntil: playwright.WaitUntilStateDomcontentloaded,
-		Timeout:   playwright.Float(30000),
-	}); err != nil {
-		return nil, fmt.Errorf("twitter: navigation failed: %w", err)
-	}
-	browser.RandomDelay(1000, 2000)
-
-	//wait for tweets
-	page.WaitForSelector(`[data-testid="tweet"]`, playwright.PageWaitForSelectorOptions{
-		Timeout: playwright.Float(10000),
-	})
-
-	//check login wall
-	loginCount, _ := page.Locator(`[data-testid="LoginForm"]`).Count()
-	if loginCount > 0 {
-		log.Println("  ⚠️ Twitter requires login — skipping. Ensure cookies are valid.")
-		return nil, nil //graceful skip
+	if len(s.cfg.SocialSearchKeywords) > 0 {
+		keywords = s.cfg.SocialSearchKeywords
 	}
 
-	//human scroll
-	browser.HumanScroll(page)
+	for _, keyword := range keywords {
+		searchQuery := fmt.Sprintf(`"%s" (job OR hiring OR opening OR recruiter OR careers OR apply)`, keyword)
+		log.Printf("  🔍 Query: %.80s...", searchQuery)
 
-	//collect tweets
-	tweetEls, _ := page.Locator(`[data-testid="tweet"]`).All()
-	log.Printf("  📦 Found %d tweets", len(tweetEls))
-	limit := 30
-	if len(tweetEls) < limit {
-		limit = len(tweetEls)
-	}
+		searchURL := fmt.Sprintf("https://x.com/search?q=%s&f=live", url.QueryEscape(searchQuery))
+		if _, err := page.Goto(searchURL, playwright.PageGotoOptions{
+			WaitUntil: playwright.WaitUntilStateDomcontentloaded,
+			Timeout:   playwright.Float(60000),
+		}); err != nil {
+			log.Printf("  ❌ Navigation failed: %v", err)
+			continue
+		}
+		browser.RandomDelay(1000, 2000)
 
-	for i := 0; i < limit; i++ {
-		tweet := tweetEls[i]
-		text, err := tweet.Locator(`[data-testid="tweetText"]`).TextContent(playwright.LocatorTextContentOptions{
-			Timeout: playwright.Float(1000),
+		page.WaitForSelector(`[data-testid="tweet"]`, playwright.PageWaitForSelectorOptions{
+			Timeout: playwright.Float(10000),
 		})
-		// Skip tweets with no text, or text too short to be a real job post
-		if err != nil || len(strings.TrimSpace(text)) < 20 {
-			continue
+
+		loginCount, _ := page.Locator(`[data-testid="LoginForm"]`).Count()
+		if loginCount > 0 {
+			log.Println("  ⚠️ Twitter requires login, skipping...")
+			return jobs, nil
 		}
 
-		// Pre-filter: skip tweets with no job-related keywords before heavier processing
-		if !jobKeywordRegex.MatchString(text) {
-			continue
+		browser.HumanScroll(page)
+
+		tweetEls, _ := page.Locator(`[data-testid="tweet"]`).All()
+		log.Printf("  📦 Found %d tweets", len(tweetEls))
+		limit := 7
+		if len(tweetEls) < limit {
+			limit = len(tweetEls)
 		}
 
-		if !filter.IsSocialHiringPost(text) {
-			continue
-		}
-
-		// Call FastText via Python (mandatory accuracy path)
-		res, err := classifier.ClassifyWithFastText(ctx, text)
-		if err == nil {
-			if !res.IsHiring && res.Confidence > 0.6 {
-				log.Printf("      ❌ Tweet filtered out by FastText ML classifier")
+		for i := 0; i < limit; i++ {
+			tweet := tweetEls[i]
+			text, err := tweet.Locator(`[data-testid="tweetText"]`).TextContent(playwright.LocatorTextContentOptions{
+				Timeout: playwright.Float(1000),
+			})
+			if err != nil || len(strings.TrimSpace(text)) < 20 {
 				continue
 			}
-		} else {
-			log.Printf("      ⚠️ FastText classifier failed: %v", err)
-		}
 
-		//extract fields
-		authorHref, _ := tweet.Locator(`[data-testid="User-Name"] a`).First().GetAttribute("href")
-		tweetHref, _ := tweet.Locator(`a[href*="/status"]`).First().GetAttribute("href")
-		dateTime, _ := tweet.Locator("time").First().GetAttribute("datetime")
-
-		//build title - first 100 runes (rune-safe for Unicode/emoji in tweets)
-		title := strings.TrimSpace(text)
-		if len([]rune(title)) > 100 {
-			title = string([]rune(title)[:100]) + "..."
-		}
-		// TrimPrefix removes leading "/" from Twitter href e.g. "/username" → "username"
-		company := strings.TrimPrefix(authorHref, "/")
-		if company == "" {
-			company = "Twitter Post"
-		}
-		// tweetHref is a relative path e.g. "/username/status/123" — must prefix with domain
-		jobURL := "https://x.com"
-		if tweetHref != "" {
-			jobURL = "https://x.com" + tweetHref
-		}
-		postedDate := "N/A"
-		if dateTime != "" {
-			t, err := time.Parse(time.RFC3339, dateTime)
-			if err == nil {
-				postedDate = t.Format("2006-01-02")
+			if filter.IsHanoiOnly(text) || filter.HasExplicitNonPreferredLocation(text) {
+				continue
 			}
-		}
 
-		//build job
-		jobs = append(jobs, scraper.Job{
-			Title:       title,
-			Description: text,
-			Company:     company,
-			URL:         jobURL,
-			Location:    "Remote/Global",
-			Salary:      filter.ExtractSalary(text),
-			Source:      "X (Twitter)",
-			Techstack:   "Golang",
-			PostedDate:  postedDate,
-			MatchScore:  5, //default
-		})
-		// %.40s truncates title to 40 chars for readable log output
-		log.Printf("    📝 %.40s...", title)
+			if !jobKeywordRegex.MatchString(text) {
+				continue
+			}
+
+			// Keep FastText model filter as per user request to "wire with .ftz"
+			if filter.IsSocialHiringPost(text) {
+				res, err := classifier.ClassifyWithFastText(ctx, text)
+				if err == nil {
+					if !res.IsHiring && res.Confidence > 0.6 {
+						log.Printf("      ❌ Tweet filtered out by FastText ML classifier")
+						continue
+					}
+				} else {
+					log.Printf("      ⚠️ FastText classifier failed: %v", err)
+				}
+			}
+
+			authorHref, _ := tweet.Locator(`[data-testid="User-Name"] a`).First().GetAttribute("href")
+			tweetHref, _ := tweet.Locator(`a[href*="/status"]`).First().GetAttribute("href")
+			dateTime, _ := tweet.Locator("time").First().GetAttribute("datetime")
+
+			title := strings.TrimSpace(text)
+			if len([]rune(title)) > 100 {
+				title = string([]rune(title)[:100]) + "..."
+			}
+
+			company := strings.TrimPrefix(authorHref, "/")
+			if company == "" {
+				company = "Twitter Post"
+			}
+
+			jobURL := "https://x.com"
+			if tweetHref != "" {
+				jobURL = "https://x.com" + tweetHref
+			}
+
+			postedDate := "N/A"
+			if dateTime != "" {
+				t, err := time.Parse(time.RFC3339, dateTime)
+				if err == nil {
+					postedDate = t.Format("2006-01-02")
+				}
+			}
+
+			job := scraper.Job{
+				Title:       title,
+				Description: text,
+				Company:     company,
+				URL:         jobURL,
+				Location:    extractLocation(text),
+				Salary:      filter.ExtractSalary(text),
+				Source:      "X (Twitter)",
+				Techstack:   "Go/Golang",
+				PostedDate:  postedDate,
+				MatchScore:  5,
+			}
+
+			job.MatchScore = filter.CalculateMatchScore(job)
+			jobs = append(jobs, job)
+			log.Printf("    📝 %.40s...", title)
+		}
 	}
+
 	log.Printf("  📊 Collected %d tweets", len(jobs))
 
 	// AI Batch Validation
 	if s.aiClient != nil && len(jobs) > 0 {
-		jobs, err = s.aiClient.ValidateSocialJobsBatch(ctx, jobs)
-		if err != nil {
+		var validJobs []scraper.Job
+		for _, job := range jobs {
+			validJobs = append(validJobs, job)
+		}
+		// Actually validate using AI if available
+		validatedJobs, err := s.aiClient.ValidateSocialJobsBatch(ctx, validJobs)
+		if err == nil {
+			jobs = validatedJobs
+		} else {
 			log.Printf("      ⚠️ AI Validation Error: %v", err)
-			// Return jobs anyway as fallback
 		}
 	}
 

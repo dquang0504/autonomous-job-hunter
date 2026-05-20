@@ -101,6 +101,49 @@ async function saveJob(job) {
 }
 
 /**
+ * Get or create a Telegram user in the DB.
+ */
+async function getOrCreateUser(telegramId, username) {
+    if (!SUPABASE_URL) return null;
+    try {
+        const result = await apiRequest('GET', `/rest/v1/users?telegram_id=eq.${telegramId}&select=telegram_id`);
+        if (Array.isArray(result) && result.length > 0) {
+            return result[0];
+        }
+        const payload = {
+            telegram_id: telegramId,
+            username: username || '',
+            master_resume_json: '{}'
+        };
+        const insertResult = await apiRequest('POST', '/rest/v1/users', payload);
+        if (Array.isArray(insertResult) && insertResult[0]) {
+            return insertResult[0];
+        }
+        return null;
+    } catch (e) {
+        console.warn('⚠️ DB user check/save failed:', e.message);
+        return null;
+    }
+}
+
+/**
+ * Fetch all Telegram chat IDs from the DB.
+ */
+async function getAllUsers() {
+    if (!SUPABASE_URL) return [];
+    try {
+        const result = await apiRequest('GET', '/rest/v1/users?select=telegram_id');
+        if (Array.isArray(result)) {
+            return result.map(u => u.telegram_id).filter(Boolean);
+        }
+        return [];
+    } catch (e) {
+        console.warn('⚠️ DB fetch users failed:', e.message);
+        return [];
+    }
+}
+
+/**
  * Auto-cleanup: delete jobs older than STALE_JOB_DAYS days.
  * Called once per scrape run.
  */
@@ -122,4 +165,4 @@ function isDBEnabled() {
     return !!(SUPABASE_URL && SUPABASE_SERVICE_KEY);
 }
 
-module.exports = { isJobSeen, saveJob, cleanupStaleJobs, isDBEnabled };
+module.exports = { isJobSeen, saveJob, getOrCreateUser, getAllUsers, cleanupStaleJobs, isDBEnabled };

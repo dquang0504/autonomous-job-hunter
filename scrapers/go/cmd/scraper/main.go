@@ -20,6 +20,7 @@ import (
 	"go-version/internal/scraper/topcv"
 	"go-version/internal/scraper/twitter"
 	"go-version/internal/scraper/vietnamworks"
+	"go-version/internal/telegram"
 	"os"
 	"path/filepath"
 	"time"
@@ -60,6 +61,17 @@ func main() {
 		}
 	} else {
 		fmt.Fprintln(os.Stderr, "⚠️ DATABASE_URL not set. Running in JSON-only mode (no DB persistence).")
+	}
+
+	// --- TELEGRAM BOT ---
+	bot, err := telegram.NewBot(cfg.TelegramToken, cfg.TelegramChatID)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "⚠️ Failed to init Telegram bot: %v. Notifications will be skipped.\n", err)
+	}
+
+	// Poll for new subscribers before scraping
+	if bot != nil {
+		bot.PollAndRegisterSubscribers(ctx, repo)
 	}
 
 	// Initialize Deduplicator (Unified database repository and JSON cache file bridge)
@@ -158,6 +170,7 @@ func main() {
 				continue
 			}
 
+			savedJobID := ""
 			if repo != nil {
 				// DB Persistence Mode
 				dbJob := &models.Job{
@@ -178,6 +191,7 @@ func main() {
 				} else {
 					fmt.Fprintf(os.Stderr, "💾 Saved to DB: %s (id=%s)\n", saved.Title, saved.ID)
 					j.ID = saved.ID
+					savedJobID = saved.ID
 				}
 			} else {
 				// JSON Cache Fallback Mode (Deduplicate using local seen-jobs.json)
@@ -189,13 +203,18 @@ func main() {
 				}
 			}
 
+			// Broadcast job to all subscribers via Telegram (Go-native, no JS needed)
+			if bot != nil {
+				bot.BroadcastJob(ctx, repo, *j, savedJobID)
+			}
+
 			validJobs = append(validJobs, *j)
 		}
 
 		allJobs = append(allJobs, validJobs...)
 	}
 
-	// Output results as JSON to stdout for the Agent to consume
+	// Output results as JSON to stdout (for logging/debugging by agent-lite)
 	output, _ := json.MarshalIndent(allJobs, "", "  ")
 	fmt.Println(string(output))
 }

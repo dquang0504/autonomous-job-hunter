@@ -14,8 +14,6 @@ const GO_SCRAPER_PATH = path.join(__dirname, './scrapers/go/bin/go-scraper');
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-const bot = new TelegramBot(TELEGRAM_TOKEN);
-
 const GO_SUPPORTED_PLATFORMS = ['twitter', 'itviec', 'vietnamworks', 'topcv', 'facebook', 'threads'];
 
 async function log(msg) {
@@ -34,9 +32,8 @@ async function executeScraper(platform = 'all') {
         for (const p of GO_SUPPORTED_PLATFORMS) {
             try {
                 const jobs = await runGoScraper(p);
-                if (jobs && jobs.length > 0) {
-                    await sendSimpleReport(jobs, `Go-${p}`);
-                }
+                // Go binary handles its own Telegram notifications.
+                log(`✅ Go Scraper (${p}) processed ${(jobs || []).length} jobs (self-sent via Go Telegram).`);
             } catch (e) {
                 log(`⚠️ Go Scraper (${p}) failed: ${e.message}`);
             }
@@ -53,13 +50,29 @@ async function executeScraper(platform = 'all') {
             log(`⚠️ JS Scraper failed: ${e.message}`);
         }
         
-    } else if (GO_SUPPORTED_PLATFORMS.includes(platform)) {
-        const jobs = await runGoScraper(platform);
-        if (jobs && jobs.length > 0) {
-            await sendSimpleReport(jobs, `Go-${platform}`);
-        }
     } else {
-        await runJsScraper(platform);
+        const targetPlatforms = platform.split(',').map(p => p.trim()).filter(Boolean);
+        const goPlatformsToRun = targetPlatforms.filter(p => GO_SUPPORTED_PLATFORMS.includes(p));
+        const jsPlatformsToRun = targetPlatforms.filter(p => !GO_SUPPORTED_PLATFORMS.includes(p));
+
+        for (const p of goPlatformsToRun) {
+            try {
+                const jobs = await runGoScraper(p);
+                // Go binary handles its own Telegram notifications and DB persistence.
+                // We only log the count here for visibility.
+                log(`✅ Go Scraper (${p}) processed ${(jobs || []).length} jobs (self-sent via Go Telegram).`);
+            } catch (e) {
+                log(`⚠️ Go Scraper (${p}) failed: ${e.message}`);
+            }
+        }
+
+        if (jsPlatformsToRun.length > 0) {
+            try {
+                await runJsScraper(jsPlatformsToRun.join(','));
+            } catch (e) {
+                log(`⚠️ JS Scraper failed: ${e.message}`);
+            }
+        }
     }
 }
 
@@ -129,6 +142,22 @@ function escapeMarkdown(text) {
 
 async function sendSimpleReport(jobs, source) {
     log(`📨 Sending ${jobs.length} jobs from ${source} to Telegram...`);
+
+    let targetChatIds = [];
+    try {
+        targetChatIds = await db.getAllUsers();
+    } catch (e) {
+        log(`⚠️ Failed to load target users from DB: ${e.message}`);
+    }
+
+    if (!targetChatIds || targetChatIds.length === 0) {
+        if (TELEGRAM_CHAT_ID) {
+            targetChatIds = [parseInt(TELEGRAM_CHAT_ID, 10)];
+        }
+    }
+
+    log(`👥 Broadcasting to ${targetChatIds.length} subscribers: ${targetChatIds.join(', ')}`);
+
     for (const job of jobs) {
         const safeDesc = job.description ? job.description.substring(0, 150) + '...' : '';
         const lines = [
@@ -156,10 +185,13 @@ async function sendSimpleReport(jobs, source) {
             ]
         };
 
-        await bot.sendMessage(TELEGRAM_CHAT_ID, message, { 
-            parse_mode: 'MarkdownV2',
-            reply_markup: inlineKeyboard
-        }).catch(e => log(`⚠️ Telegram error: ${e.message}`));
+        for (const chatId of targetChatIds) {
+            await bot.sendMessage(chatId, message, { 
+                parse_mode: 'MarkdownV2',
+                reply_markup: inlineKeyboard
+            }).catch(e => log(`⚠️ Telegram error for chat ${chatId}: ${e.message}`));
+            await new Promise(r => setTimeout(r, 200));
+        }
         
         await new Promise(r => setTimeout(r, 500));
     }
@@ -170,6 +202,7 @@ async function main() {
     const platform = args.find(a => a.startsWith('--platform='))?.split('=')[1] || 'all';
 
     try {
+        await registerNewSubscribers();
         await executeScraper(platform);
         log("🏁 Session finished.");
     } catch (err) {

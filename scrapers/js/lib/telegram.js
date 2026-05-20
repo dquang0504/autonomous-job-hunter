@@ -9,6 +9,8 @@ const { formatDateTime } = require('../utils/date');
 const TELEGRAM_MESSAGE_LIMIT = 4000;
 const TELEGRAM_CAPTION_LIMIT = 900;
 
+const db = require('./db');
+
 class TelegramReporter {
     constructor() {
         this.bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
@@ -40,10 +42,26 @@ class TelegramReporter {
             ]
         };
 
-        await this.bot.sendMessage(this.chatId, message, {
-            parse_mode: 'Markdown',
-            reply_markup: inlineKeyboard
-        });
+        let targetChatIds = [];
+        try {
+            targetChatIds = await db.getAllUsers();
+        } catch (e) {
+            console.error('⚠️ Failed to load target users from DB for JS reporter:', e.message);
+        }
+
+        if (!targetChatIds || targetChatIds.length === 0) {
+            if (this.chatId) {
+                targetChatIds = [parseInt(this.chatId, 10)];
+            }
+        }
+
+        for (const id of targetChatIds) {
+            await this.bot.sendMessage(id, message, {
+                parse_mode: 'Markdown',
+                reply_markup: inlineKeyboard
+            }).catch(e => console.error(`⚠️ Telegram send error to ${id}:`, e.message));
+            await new Promise(r => setTimeout(r, 200));
+        }
     }
 
     async sendCaptchaAlert(screenshotPath) {

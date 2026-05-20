@@ -75,6 +75,40 @@ func (r *Repository) GetOrCreateUser(ctx context.Context, telegramID int64, user
 	return &user, nil
 }
 
+// RegisterSubscriber inserts or ignores a Telegram subscriber (no resume needed).
+// Called by the polling flow when a new user interacts with the bot.
+func (r *Repository) RegisterSubscriber(ctx context.Context, telegramID int64, username string) error {
+	_, err := r.db.Exec(ctx, `
+		INSERT INTO users (telegram_id, username, master_resume_json)
+		VALUES ($1, $2, '{}')
+		ON CONFLICT (telegram_id) DO NOTHING`,
+		telegramID, username,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to register subscriber: %w", err)
+	}
+	return nil
+}
+
+// GetAllSubscriberChatIDs returns all telegram_id values in the users table.
+// Used by the broadcast flow to send job alerts to every registered subscriber.
+func (r *Repository) GetAllSubscriberChatIDs(ctx context.Context) ([]int64, error) {
+	rows, err := r.db.Query(ctx, "SELECT telegram_id FROM users")
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch subscriber chat IDs: %w", err)
+	}
+	defer rows.Close()
+
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err == nil {
+			ids = append(ids, id)
+		}
+	}
+	return ids, nil
+}
+
 func (r *Repository) UpdateUserResume(ctx context.Context, userID string, masterResume []byte) error {
 	_, err := r.db.Exec(ctx, "UPDATE users SET master_resume_json = $1 WHERE id = $2", masterResume, userID)
 	if err != nil {
