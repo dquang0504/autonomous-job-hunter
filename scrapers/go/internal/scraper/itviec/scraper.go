@@ -266,20 +266,21 @@ func (s *ITViecScraper) processJobCard(ctx context.Context, page playwright.Page
 	if idx := strings.Index(fullURL, "?"); idx != -1 {
 		fullURL = fullURL[:idx]
 	}
+	// fix itviec /content issue
+	fullURL = strings.TrimSuffix(fullURL, "/content")
+	if !strings.Contains(fullURL, "?lab_feature=preview_jd_page") {
+		fullURL += "?lab_feature=preview_jd_page"
+	}
 
 	//get description
 	description := ""
-	detailPanel := page.Locator("div.preview-job-content")
+	detailPanel := page.Locator("div.preview-job-content, div.job-details").First()
 	if visible, _ := detailPanel.IsVisible(playwright.LocatorIsVisibleOptions{
 		Timeout: playwright.Float(2000),
 	}); visible {
-		desc, _ := detailPanel.Locator(".job-description").InnerText(playwright.LocatorInnerTextOptions{
+		description, _ = detailPanel.InnerText(playwright.LocatorInnerTextOptions{
 			Timeout: playwright.Float(1500),
 		})
-		skills, _ := detailPanel.Locator(".job-experiences").InnerText(playwright.LocatorInnerTextOptions{
-			Timeout: playwright.Float(1500),
-		})
-		description = desc + "\n\n" + skills
 	}
 
 	job := &scraper.Job{
