@@ -136,12 +136,6 @@ jobs:
           name: seen-jobs-${{ matrix.name }}
           path: logs/seen-jobs.json
           retention-days: 1
-          
-        if: ${{ contains(matrix.arg, 'cloudflare') }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: cache-cloudflare
-          retention-days: 1
 
       - name: Upload logs (optional)
         uses: actions/upload-artifact@v4
