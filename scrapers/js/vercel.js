@@ -18,11 +18,11 @@ async function scrapeVercel(page, reporter) {
 
         // Load Cache
         let cachedStats = {};
-        if (fs.existsSync(CONFIG.paths.vercelCache)) {
-            try {
-                cachedStats = JSON.parse(fs.readFileSync(CONFIG.paths.vercelCache, 'utf-8'));
-            } catch (e) {
-                console.warn('  ⚠️ Failed to parse Vercel cache');
+        const db = require('./lib/db');
+        if (db.isDBEnabled()) {
+            const dbSnap = await db.getLatestVercelSnapshot();
+            if (dbSnap && dbSnap.raw_json) {
+                cachedStats = dbSnap.raw_json;
             }
         }
 
@@ -225,7 +225,11 @@ ${countries.split(', ').map(i => `• ${i}`).join('\n')}
                             await reporter.sendStatus(message);
 
                             // Update Cache
-                            fs.writeFileSync(CONFIG.paths.vercelCache, JSON.stringify(currentStats, null, 2));
+                            if (db.isDBEnabled()) {
+                                await db.saveVercelSnapshot(currentStats);
+                            } else {
+                                fs.writeFileSync(CONFIG.paths.vercelCache, JSON.stringify(currentStats, null, 2));
+                            }
                         } else {
                             console.log('  Draws 💤 Stats identical to cache. Skipping notification.');
                         }

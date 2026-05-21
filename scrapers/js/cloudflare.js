@@ -143,7 +143,16 @@ async function scrapeCloudflare(reporter) {
       stats: {}
     };
 
-    if (fs.existsSync(CONFIG.paths.cloudflareCache)) {
+    const db = require('./lib/db');
+    if (db.isDBEnabled()) {
+        const dbSnap = await db.getLatestCloudflareSnapshot();
+        if (dbSnap) {
+            cachedData.hash = dbSnap.data_hash;
+            cachedData.lastSentDate = dbSnap.last_sent_date;
+            cachedData.stats = dbSnap.stats_json;
+            cachedData.totalRequests = dbSnap.total_requests;
+        }
+    } else if (fs.existsSync(CONFIG.paths.cloudflareCache)) {
       try {
         cachedData = JSON.parse(fs.readFileSync(CONFIG.paths.cloudflareCache, 'utf-8'));
       } catch (e) {
@@ -190,7 +199,16 @@ async function scrapeCloudflare(reporter) {
         totalRequests,
         stats: currentStats
       };
-      fs.writeFileSync(CONFIG.paths.cloudflareCache, JSON.stringify(newCache, null, 2));
+      if (db.isDBEnabled()) {
+        await db.saveCloudflareSnapshot({
+            totalRequests,
+            statsJson: currentStats,
+            dataHash: currentHash,
+            lastSentDate: todayVN
+        });
+      } else {
+        fs.writeFileSync(CONFIG.paths.cloudflareCache, JSON.stringify(newCache, null, 2));
+      }
       console.log(`  ✅ Cache updated (hash + lastSentDate → ${todayVN}).`);
     } else if (!hasTraffic) {
       console.log('  💤 No traffic in last 24h. Skipping notification.');

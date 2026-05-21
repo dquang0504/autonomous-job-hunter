@@ -95,11 +95,37 @@ class ScreenshotDebugger {
 
             console.log(`📸 Screenshot saved: ${filename}`);
 
+            // Upload to Supabase Storage
+            const db = require('./db');
+            let publicUrl = null;
+            if (db.isDBEnabled()) {
+                publicUrl = await db.uploadScreenshot(filepath, filename);
+                if (publicUrl) {
+                    console.log(`☁️ Screenshot uploaded to Supabase: ${publicUrl}`);
+                }
+            }
+
             // Send to Telegram if reporter available
             if (this.reporter && this.reporter.sendPhoto) {
                 const caption = truncateText(message || `🔍 Debug Screenshot: ${context}`);
                 await this.reporter.sendPhoto(filepath, caption);
                 console.log(`📤 Screenshot sent to Telegram`);
+            }
+
+            // Log incident to Supabase DB if it's an error/block context
+            if (db.isDBEnabled()) {
+                let incidentType = 'error';
+                if (context.includes('cloudflare')) incidentType = 'cloudflare_block';
+                if (context.includes('timeout')) incidentType = 'timeout';
+                if (context.includes('auth')) incidentType = 'login_required';
+                
+                // Extract platform (usually the prefix before hyphen)
+                const platform = context.split('-')[0] || 'unknown';
+                
+                // Do not log "nojobs" as an incident, it's normal behavior
+                if (!context.includes('nojobs')) {
+                    await db.logIncident(platform, incidentType, truncateText(message, 500), publicUrl);
+                }
             }
 
             return filepath;

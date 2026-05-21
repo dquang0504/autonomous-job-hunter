@@ -165,4 +165,179 @@ function isDBEnabled() {
     return !!(SUPABASE_URL && SUPABASE_SERVICE_KEY);
 }
 
-module.exports = { isJobSeen, saveJob, getOrCreateUser, getAllUsers, cleanupStaleJobs, isDBEnabled };
+// ─── VERCEL ANALYTICS ───────────────────────────────────────────────────────
+
+/**
+ * Fetch the most recent Vercel analytics snapshot.
+ * Returns the row object or null if none exists / DB unavailable.
+ */
+async function getLatestVercelSnapshot() {
+    if (!SUPABASE_URL) return null;
+    try {
+        const result = await apiRequest('GET', '/rest/v1/vercel?select=*&order=scraped_at.desc&limit=1');
+        return Array.isArray(result) && result.length > 0 ? result[0] : null;
+    } catch (e) {
+        console.warn('⚠️ DB getLatestVercelSnapshot failed:', e.message);
+        return null;
+    }
+}
+
+/**
+ * Insert a new Vercel analytics snapshot row.
+ * @param {Object} stats - { visitors, pageViews, bounceRate, topPages, referrers, countries, devices, os }
+ */
+async function saveVercelSnapshot(stats) {
+    if (!SUPABASE_URL) return null;
+    try {
+        const payload = {
+            visitors:    stats.visitors    || null,
+            page_views:  stats.pageViews   || null,
+            bounce_rate: stats.bounceRate  || null,
+            top_pages:   stats.topPages    || null,
+            referrers:   stats.referrers   || null,
+            countries:   stats.countries   || null,
+            devices:     stats.devices     || null,
+            os:          stats.os          || null,
+            raw_json:    stats,
+        };
+        const result = await apiRequest('POST', '/rest/v1/vercel', payload);
+        return Array.isArray(result) && result[0] ? result[0] : null;
+    } catch (e) {
+        console.warn('⚠️ DB saveVercelSnapshot failed:', e.message);
+        return null;
+    }
+}
+
+// ─── CLOUDFLARE ANALYTICS ────────────────────────────────────────────────────
+
+/**
+ * Fetch the most recent Cloudflare analytics snapshot.
+ * Returns { data_hash, last_sent_date, stats_json, total_requests } or null.
+ */
+async function getLatestCloudflareSnapshot() {
+    if (!SUPABASE_URL) return null;
+    try {
+        const result = await apiRequest('GET', '/rest/v1/cloudflare?select=data_hash,last_sent_date,stats_json,total_requests&order=scraped_at.desc&limit=1');
+        return Array.isArray(result) && result.length > 0 ? result[0] : null;
+    } catch (e) {
+        console.warn('⚠️ DB getLatestCloudflareSnapshot failed:', e.message);
+        return null;
+    }
+}
+
+/**
+ * Insert a new Cloudflare analytics snapshot row.
+ * @param {Object} params - { totalRequests, statsJson, dataHash, lastSentDate }
+ */
+async function saveCloudflareSnapshot({ totalRequests, statsJson, dataHash, lastSentDate }) {
+    if (!SUPABASE_URL) return null;
+    try {
+        const payload = {
+            total_requests: totalRequests || 0,
+            stats_json:     statsJson     || {},
+            data_hash:      dataHash      || null,
+            last_sent_date: lastSentDate  || null,
+        };
+        const result = await apiRequest('POST', '/rest/v1/cloudflare', payload);
+        return Array.isArray(result) && result[0] ? result[0] : null;
+    } catch (e) {
+        console.warn('⚠️ DB saveCloudflareSnapshot failed:', e.message);
+        return null;
+    }
+}
+
+// ─── SCRAPER INCIDENTS ────────────────────────────────────────────────────────
+
+/**
+ * Log a scraper incident (error, block, timeout) to the DB.
+ * @param {string} platform       - e.g. 'vercel', 'itviec', 'cloudflare'
+ * @param {string} incidentType   - e.g. 'cloudflare_block', 'timeout', 'login_required', 'error'
+ * @param {string} [errorMsg]     - Optional error message
+ * @param {string} [screenshotUrl]- Optional Supabase Storage public URL
+ */
+async function logIncident(platform, incidentType, errorMsg = null, screenshotUrl = null) {
+    if (!SUPABASE_URL) return null;
+    try {
+        const payload = {
+            platform,
+            incident_type:   incidentType,
+            error_msg:       errorMsg      || null,
+            screenshot_url:  screenshotUrl || null,
+        };
+        const result = await apiRequest('POST', '/rest/v1/scraper_incidents', payload);
+        return Array.isArray(result) && result[0] ? result[0] : null;
+    } catch (e) {
+        console.warn('⚠️ DB logIncident failed:', e.message);
+        return null;
+    }
+}
+
+module.exports = {
+    isJobSeen,
+    saveJob,
+    getOrCreateUser,
+    getAllUsers,
+    cleanupStaleJobs,
+    isDBEnabled,
+    // Analytics
+    getLatestVercelSnapshot,
+    saveVercelSnapshot,
+    getLatestCloudflareSnapshot,
+    saveCloudflareSnapshot,
+    // Incidents
+    logIncident,
+};
+
+// ─── STORAGE ─────────────────────────────────────────────────────────────────
+
+/**
+ * Upload a local file to Supabase Storage and return the public URL.
+ * @param {string} filepath - Path to the local file
+ * @param {string} filename - Destination filename in the 'screenshots' bucket
+ */
+async function uploadScreenshot(filepath, filename) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return null;
+    try {
+        const fs = require('fs');
+        const content = fs.readFileSync(filepath);
+        const url = new URL(`/storage/v1/object/screenshots/${filename}`, SUPABASE_URL);
+        
+        return new Promise((resolve) => {
+            const options = {
+                method: 'POST',
+                hostname: url.hostname,
+                port: url.port || 443,
+                path: url.pathname,
+                headers: {
+                    'Content-Type': 'image/png',
+                    'apikey': SUPABASE_SERVICE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+                }
+            };
+            
+            const req = https.request(options, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                    if (res.statusCode === 200) {
+                        const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/screenshots/${filename}`;
+                        resolve(publicUrl);
+                    } else {
+                        console.warn(`⚠️ DB uploadScreenshot failed (${res.statusCode}): ${data}`);
+                        resolve(null);
+                    }
+                });
+            });
+            req.on('error', (e) => {
+                console.warn('⚠️ DB uploadScreenshot failed:', e.message);
+                resolve(null);
+            });
+            req.write(content);
+            req.end();
+        });
+    } catch (e) {
+        console.warn('⚠️ DB uploadScreenshot failed:', e.message);
+        return null;
+    }
+}
+module.exports.uploadScreenshot = uploadScreenshot;
