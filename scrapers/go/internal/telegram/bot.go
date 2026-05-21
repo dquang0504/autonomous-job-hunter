@@ -198,3 +198,19 @@ func (b *Bot) escapeMarkdown(text string) string {
 	)
 	return replacer.Replace(text)
 }
+
+// SendMarkdownToOwner sends a message with MarkdownV2 formatting to the fallback owner chat ID.
+func (b *Bot) SendMarkdownToOwner(message string) error {
+msg := tgbotapi.NewMessage(b.fallbackChatID, message)
+msg.ParseMode = "MarkdownV2"
+_, err := b.api.Send(msg)
+return err
+}
+
+// SendPhotoToOwner sends a photo and caption to the owner chat ID.
+func (b *Bot) SendPhotoToOwner(photoPath string, caption string) error {
+photo := tgbotapi.NewPhoto(b.fallbackChatID, tgbotapi.FilePath(photoPath))
+photo.Caption = caption
+_, err := b.api.Send(photo)
+return err
+}

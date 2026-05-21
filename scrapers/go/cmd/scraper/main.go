@@ -20,6 +20,8 @@ import (
 	"go-version/internal/scraper/topcv"
 	"go-version/internal/scraper/twitter"
 	"go-version/internal/scraper/vietnamworks"
+	"go-version/internal/scraper/vercel"
+	"go-version/internal/scraper/cloudflare"
 	"go-version/internal/telegram"
 	"os"
 	"path/filepath"
@@ -126,6 +128,8 @@ func main() {
 		"vietnamworks": vietnamworks.NewVietnamWorksScraper(cfg),
 		"facebook":     facebook.NewFacebookScraper(cfg, aiClient),
 		"threads":      threads.NewThreadsScraper(cfg, aiClient),
+		"vercel":       vercel.NewVercelScraper(cfg, repo, bot),
+		"cloudflare":   cloudflare.NewCloudflareScraper(cfg, repo, bot),
 	}
 
 	var activeScrapers []scraper.Scraper

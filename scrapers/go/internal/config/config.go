@@ -28,6 +28,8 @@ type Config struct {
 	CookiesPath string `yaml:"cookies_path"`
 	CachePath   string `yaml:"cache_path"`
 	DatabaseURL string `yaml:"database_url" env:"DATABASE_URL"`
+	SupabaseURL string `env:"SUPABASE_URL"`
+	SupabaseKey string `env:"SUPABASE_SERVICE_ROLE_KEY"`
 }
 
 func Load() *Config {
@@ -52,6 +54,13 @@ func Load() *Config {
 
 	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
 		cfg.DatabaseURL = dbURL
+	}
+
+	if supURL := os.Getenv("SUPABASE_URL"); supURL != "" {
+		cfg.SupabaseURL = supURL
+	}
+	if supKey := os.Getenv("SUPABASE_SERVICE_ROLE_KEY"); supKey != "" {
+		cfg.SupabaseKey = supKey
 	}
 
 	if chatID := os.Getenv("TELEGRAM_CHAT_ID"); chatID != "" {
